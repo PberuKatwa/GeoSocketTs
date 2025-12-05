@@ -18,17 +18,10 @@ const customLevels = {
   },
 };
 
-// 2. Extend loogger types
-export interface AppLogger extends Logger {
-  httpreq: winston.LeveledLogMethod;
-  logAPIRequest(req: Request, res: Response, duration: number): void;
-  logAPIStart(req: Request): void;
-}
-
-// 3. Register colors
+// 2. Register colors
 winston.addColors(customLevels.colors);
 
-// 4. Logger options with new layout
+// 3. Logger options with new layout
 const loggerOptions: LoggerOptions = {
   levels: customLevels.levels,
   level: "debug",
@@ -52,7 +45,7 @@ const loggerOptions: LoggerOptions = {
   ],
 };
 
-// 5. Create logger
+// 4. Create logger
 const baseLogger = winston.createLogger(loggerOptions) as AppLogger;
 
 export const logger = baseLogger;
