@@ -8,3 +8,5 @@ export type RequestRiderLocation = {
    sType:"REQUEST_RIDER_LOCATION";
    driverId:string;
 }
+
+export type ClientMessage = ClientRequestRoute | RequestRiderLocation

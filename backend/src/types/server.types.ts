@@ -11,3 +11,5 @@ export type ServerRiderLocation ={
     latitude:number;
     longitude:number;
 }
+
+export type ServerMessage = ServerRespondRoute | ServerRiderLocation
