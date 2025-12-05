@@ -26,7 +26,6 @@ export function computeRoute(
 
 }
 
-// Simulated drivers
 export const drivers = new Map<
   string,
   { lat: number; lng: number; interval?: NodeJS.Timeout }
