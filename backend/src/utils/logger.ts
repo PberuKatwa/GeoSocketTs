@@ -21,31 +21,42 @@ const customLevels = {
 // 2. Register colors
 winston.addColors(customLevels.colors);
 
-// 3. Logger options with new layout
+// 3. Logger options
 const loggerOptions: LoggerOptions = {
   levels: customLevels.levels,
   level: "debug",
   format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.printf(({ level, message, timestamp, ...meta }) => {
-      const color = winston.format.colorize().colorize;
-
-      const metaString =
-        Object.keys(meta).length > 0 ? JSON.stringify(meta) : "";
-
-      // ✔ Format exactly as requested:
-      // INFO 2025-11-22T10:20:01.719Z : message
-      return `${color(level, level.toUpperCase())} ${timestamp} : ${message} ${metaString}`;
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    winston.format.colorize({ all: true }),
+    winston.format.printf(({ timestamp, level, message, ...meta }) => {
+      const metaString = Object.keys(meta).length > 0 
+        ? JSON.stringify(meta, null, 2) 
+        : '';
+      return `${timestamp} [${level}]: ${message} ${metaString}`;
     })
   ),
   transports: [
     new winston.transports.Console(),
-    new winston.transports.File({ filename: "error.log", level: "error" }),
-    new winston.transports.File({ filename: "combined.log" }),
+    new winston.transports.File({ 
+      filename: "error.log", 
+      level: "error",
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.json()
+      )
+    }),
+    new winston.transports.File({ 
+      filename: "combined.log",
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.json()
+      )
+    }),
   ],
 };
 
 // 4. Create logger
-const baseLogger = winston.createLogger(loggerOptions) as AppLogger;
+const logger = winston.createLogger(loggerOptions);
 
-export const logger = baseLogger;
+// 5. Optional: Add httpreq method if you need it
+export default logger;
