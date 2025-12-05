@@ -1,3 +1,3 @@
-import { createWSServer } from "./services/socket.service.js";
+import { createSocketIOServer } from "./services/socket.service.js";
 
-createWSServer(4000)
+createSocketIOServer(4000)

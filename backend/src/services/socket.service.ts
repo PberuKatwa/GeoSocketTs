@@ -1,65 +1,82 @@
-import { WebSocketServer } from "ws";
-import { computeRoute, drivers, startDriverSimulation } from "./deliveryService.js";
-import { ClientRequestRoute, RequestRiderLocation,ClientMessage } from "../types/client.types.js";
-import { ServerRespondRoute, ServerRiderLocation, ServerMessage } from "../types/server.types.js";
+import { Server } from "socket.io";
+import { createServer } from "http";
+import { computeRoute, startDriverSimulation, stopDriverSimulation, drivers } from "./deliveryService.js";
 
-export function createWSServer(port: number) {
-  const wss = new WebSocketServer({ port });
+export function createSocketIOServer(port: number) {
+  const httpServer = createServer();
+  const io = new Server(httpServer, {
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"]
+    }
+  });
 
-  console.log(`WS Server running at ws://localhost:${port}`);
+  console.log(`Socket.IO Server running at http://localhost:${port}`);
 
-  wss.on("connection", (ws) => {
-    console.log("Client connected.");
+  io.on("connection", (socket) => {
+    console.log(`Client connected: ${socket.id}`);
 
-    ws.on("message", (raw) => {
-      let msg: ClientMessage;
-
+    // Handle route calculation
+    socket.on("calculate-route", ({ from, to }) => {
       try {
-        msg = JSON.parse(raw.toString());
-      } catch {
-        console.error("Invalid JSON");
-        return;
-      }
-
-      // Handle ROUTE request
-      if (msg.sType === "REQUEST_ROUTE") {
         const result = computeRoute(
-          [msg.from[1], msg.from[0]],
-          [msg.to[1], msg.to[0]]
+          [from.lng, from.lat],
+          [to.lng, to.lat]
         );
 
-        const response: ServerRespondRoute = {
-          sType: "RESPONSE_ROUTE",
+        // IMPORTANT: Return coordinates properly
+        socket.emit("route-calculated", {
           distanceKm: result.distanceKm,
           etaMinutes: result.etaMinutes,
-          route: result.route
-        };
-
-        ws.send(JSON.stringify(response));
-      }
-
-      // Handle DRIVER subscription
-      if (msg.sType === "REQUEST_RIDER_LOCATION") {
-        const driverId = msg.driverId;
-
-        startDriverSimulation(driverId);
-
-        const interval = setInterval(() => {
-          const d = drivers.get(driverId);
-          if (!d) return;
-
-          const update: ServerMessage = {
-            sType: "RESPONSE_RIDER_LOCATION",
-            driverId,
-            latitude: d.lat,
-            longitude: d.lng
-          };
-
-          ws.send(JSON.stringify(update));
-        }, 1000);
-
-        ws.on("close", () => clearInterval(interval));
+          route: {
+            type: result.route.geometry.type,
+            coordinates: result.route.geometry.coordinates  // Access the geometry.coordinates
+          }
+        });
+      } catch (error) {
+        console.error("Route calculation error:", error);
+        socket.emit("error", { message: "Failed to calculate route" });
       }
     });
+
+    // Handle driver tracking start
+    socket.on("start-tracking", ({ driverId, targetLat, targetLng }) => {
+      console.log(`Starting tracking for ${driverId}`);
+      
+      socket.join(`driver-${driverId}`);
+      
+      startDriverSimulation(driverId, targetLat, targetLng);
+
+      const interval = setInterval(() => {
+        const driver = drivers.get(driverId);
+        if (!driver) {
+          clearInterval(interval);
+          return;
+        }
+
+        io.to(`driver-${driverId}`).emit("driver-location", {
+          driverId,
+          latitude: driver.lat,
+          longitude: driver.lng
+        });
+      }, 1000);
+
+      socket.on("disconnect", () => {
+        clearInterval(interval);
+        socket.leave(`driver-${driverId}`);
+      });
+
+      socket.on("stop-tracking", () => {
+        clearInterval(interval);
+        stopDriverSimulation(driverId);
+        socket.leave(`driver-${driverId}`);
+      });
+    });
+
+    socket.on("disconnect", () => {
+      console.log(`Client disconnected: ${socket.id}`);
+    });
   });
+
+  httpServer.listen(port);
 }
