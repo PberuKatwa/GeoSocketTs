@@ -1,7 +1,7 @@
 import { WebSocketServer } from "ws";
-import { computeRoute, drivers, startDriverSimulation } from "./deliveryService";
-import { ClientRequestRoute, RequestRiderLocation,ClientMessage } from "../types/client.types";
-import { ServerRespondRoute, ServerRiderLocation, ServerMessage } from "../types/server.types";
+import { computeRoute, drivers, startDriverSimulation } from "./deliveryService.js";
+import { ClientRequestRoute, RequestRiderLocation,ClientMessage } from "../types/client.types.js";
+import { ServerRespondRoute, ServerRiderLocation, ServerMessage } from "../types/server.types.js";
 
 export function createWSServer(port: number) {
   const wss = new WebSocketServer({ port });

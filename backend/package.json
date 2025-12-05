@@ -4,7 +4,7 @@
   "type": "module",
   "main": "server.ts",
   "scripts": {
-    "dev": "ts-node-esm src/server.ts",
+    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" node src/server.ts",
     "build": "tsc",
     "start": "node dist/server.ts"
   },
@@ -14,6 +14,7 @@
   "description": "",
   "dependencies": {
     "@turf/turf": "^7.3.1",
+    "@types/node": "^24.10.1",
     "ts-node": "^10.9.2",
     "turf": "^3.0.14",
     "typescript": "^5.9.3",
