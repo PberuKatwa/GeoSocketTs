@@ -53,13 +53,13 @@ export function createSocketIOServer(port: number) {
     // -----------------------------------------------------
     // DRIVER TRACKING (REAL ROAD MOVEMENT)
     // -----------------------------------------------------
-    socket.on("start-tracking", async ({ driverId, targetLat, targetLng }) => {
-      console.log(`Starting tracking for ${driverId}`);
+    socket.on("start-tracking", async ({ driverId, targetLat, targetLng, startLat, startLng }) => {
+      console.log(`Starting tracking for ${driverId} from (${startLat}, ${startLng}) to (${targetLat}, ${targetLng})`);
 
       socket.join(`driver-${driverId}`);
 
       // Start simulation → fetch OSRM route
-      await startDriverSimulation(driverId, targetLat, targetLng);
+      await startDriverSimulation(driverId, targetLat, targetLng, startLat, startLng);
 
       // Emit driver position every second
       const interval = setInterval(() => {

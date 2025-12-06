@@ -1,21 +1,22 @@
 <template>
   <div class="app-layout">
-    
+    <!-- Map Container -->
     <div class="map-wrapper">
       <div id="map" ref="mapContainer"></div>
-      
       <div class="status-pill" :class="{ connected: connected, disconnected: !connected }">
         <span class="status-dot"></span>
         {{ connected ? 'Live' : 'Offline' }}
       </div>
     </div>
 
+    <!-- Sidebar / Panel -->
     <div class="nav-panel" :class="{ 'is-expanded': showDetails }">
-      
+      <!-- Handle for mobile -->
       <div class="panel-handle" @click="togglePanel">
         <div class="handle-bar"></div>
       </div>
 
+      <!-- Compact Header for Mobile -->
       <div class="compact-header" v-show="!isDesktop && !showDetails">
         <div class="trip-summary">
           <div class="driver-badge">
@@ -27,29 +28,21 @@
             <span class="divider">•</span>
             <span>{{ routeInfo.distance }} km</span>
           </div>
-          <div class="meta placeholder" v-else>
-            Ready to route
-          </div>
+          <div class="meta placeholder" v-else>Ready to route</div>
         </div>
-        
         <div class="compact-actions">
-          <button @click.stop="togglePanel" class="btn-icon">
-            ⚙️
-          </button>
-          <button 
-            class="btn-icon primary"
-            @click.stop="mainAction"
-            :disabled="!connected"
-          >
+          <button @click.stop="togglePanel" class="btn-icon">⚙️</button>
+          <button @click.stop="mainAction" class="btn-icon primary" :disabled="!connected">
             {{ journeyStarted ? '⏹️' : '▶️' }}
           </button>
         </div>
       </div>
 
+      <!-- Panel Content -->
       <div class="panel-content" v-show="isDesktop || showDetails">
-        
         <div class="section-title">Trip Configuration</div>
 
+        <!-- Driver ID -->
         <div class="input-group">
           <div class="input-field">
             <label>Driver ID</label>
@@ -57,6 +50,7 @@
           </div>
         </div>
 
+        <!-- Location Inputs -->
         <div class="location-inputs">
           <div class="input-row">
             <div class="point-icon start"></div>
@@ -65,9 +59,7 @@
               <input v-model.number="fromCoords.lng" type="number" step="0.000001" placeholder="Lng" />
             </div>
           </div>
-          
           <div class="connector-line"></div>
-
           <div class="input-row">
             <div class="point-icon end"></div>
             <div class="coord-group">
@@ -77,6 +69,7 @@
           </div>
         </div>
 
+        <!-- Route Stats -->
         <div class="stats-card" v-if="routeInfo">
           <div class="stat-item">
             <span class="label">Distance</span>
@@ -89,35 +82,20 @@
           </div>
         </div>
 
+        <!-- Action Buttons -->
         <div class="action-grid">
-          <button 
-            @click="requestRoute" 
-            class="btn btn-secondary"
-            :disabled="!connected"
-          >
+          <button @click="requestRoute" class="btn btn-secondary" :disabled="!connected">
             Calculate Route
           </button>
-          
-          <button 
-            v-if="!journeyStarted"
-            @click="startJourney" 
-            class="btn btn-primary"
-            :disabled="!connected || !routeInfo"
-          >
+          <button v-if="!journeyStarted" @click="startJourney" class="btn btn-primary" :disabled="!connected || !routeInfo">
             Start Journey
           </button>
-          
-          <button 
-            v-else
-            @click="stopJourney" 
-            class="btn btn-danger"
-          >
-            End Journey
-          </button>
+          <button v-else @click="stopJourney" class="btn btn-danger">End Journey</button>
         </div>
 
+        <!-- Live Debug Info -->
         <div class="debug-info" v-if="driverLocation">
-          <span>📍 Live: {{ driverLocation.lat.toFixed(5) }}, {{ driverLocation.lng.toFixed(5) }}</span>
+          📍 Live: {{ driverLocation.lat.toFixed(5) }}, {{ driverLocation.lng.toFixed(5) }}
         </div>
       </div>
     </div>
@@ -130,158 +108,92 @@ import { io } from 'socket.io-client'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
-// UI State
+/* ---------- UI State ---------- */
 const showDetails = ref(false)
 const windowWidth = ref(window.innerWidth)
 const isDesktop = computed(() => windowWidth.value >= 768)
 
-// Handle Resize for Responsive Logic
-const handleResize = () => {
+function handleResize() {
   windowWidth.value = window.innerWidth
   if (isDesktop.value) showDetails.value = true
 }
 
-// Socket.IO & Logic
-const socket = ref(null)
-const connected = ref(false)
-const fromCoords = ref({ lat: -1.286389, lng: 36.817223 })
-const toCoords = ref({ lat: -1.292066, lng: 36.821946 })
-const route = ref(null)
-const routeInfo = ref(null)
-const driverId = ref('driver-001')
-const driverLocation = ref(null)
-const tracking = ref(false)
-const journeyStarted = ref(false)
-
+/* ---------- Map & Markers ---------- */
 const mapContainer = ref(null)
 let map = null
 let fromMarker = null
 let toMarker = null
 let driverMarker = null
 
-// Smooth animation state
+const fromCoords = ref({ lat: -1.286389, lng: 36.817223 })
+const toCoords = ref({ lat: -1.292066, lng: 36.821946 })
+const route = ref(null)
+const routeInfo = ref(null)
+const driverLocation = ref(null)
+const driverId = ref('driver-001')
+
+/* ---------- WebSocket ---------- */
+const socket = ref(null)
+const connected = ref(false)
+const tracking = ref(false)
+const journeyStarted = ref(false)
+
+/* ---------- Smooth animation ---------- */
 let animationFrame = null
 let currentPosition = { lat: 0, lng: 0 }
 let targetPosition = { lat: 0, lng: 0 }
 
-function togglePanel() {
-  showDetails.value = !showDetails.value
-}
+function lerp(start, end, factor) { return start + (end - start) * factor }
 
-function mainAction() {
-  if (journeyStarted.value) stopJourney()
-  else if (routeInfo.value) startJourney()
-  else requestRoute()
-}
-
-// Smooth animation function
 function smoothUpdatePosition() {
-  const lerp = (start, end, factor) => start + (end - start) * factor
-  const smoothFactor = 0.15 // Lower = smoother but slower
-  
-  currentPosition.lat = lerp(currentPosition.lat, targetPosition.lat, smoothFactor)
-  currentPosition.lng = lerp(currentPosition.lng, targetPosition.lng, smoothFactor)
-  
-  if (driverMarker) {
-    driverMarker.setLngLat([currentPosition.lng, currentPosition.lat])
-  }
-  
-  // Continue animation if not close enough to target
-  const distance = Math.sqrt(
-    Math.pow(targetPosition.lat - currentPosition.lat, 2) + 
-    Math.pow(targetPosition.lng - currentPosition.lng, 2)
-  )
-  
-  if (distance > 0.000001) {
-    animationFrame = requestAnimationFrame(smoothUpdatePosition)
-  }
+  const factor = 0.15
+  currentPosition.lat = lerp(currentPosition.lat, targetPosition.lat, factor)
+  currentPosition.lng = lerp(currentPosition.lng, targetPosition.lng, factor)
+
+  if (driverMarker) driverMarker.setLngLat([currentPosition.lng, currentPosition.lat])
+
+  const distance = Math.hypot(targetPosition.lat - currentPosition.lat, targetPosition.lng - currentPosition.lng)
+  if (distance > 0.000001) animationFrame = requestAnimationFrame(smoothUpdatePosition)
 }
 
-onMounted(() => {
-  window.addEventListener('resize', handleResize)
-  
-  map = new maplibregl.Map({
-    container: mapContainer.value,
-    style: {
-      version: 8,
-      sources: {
-        osm: {
-          type: 'raster',
-          tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-          tileSize: 256,
-          attribution: '© OpenStreetMap',
-          maxzoom: 19
-        }
-      },
-      layers: [{ id: 'osm', type: 'raster', source: 'osm' }]
-    },
-    center: [fromCoords.value.lng, fromCoords.value.lat],
-    zoom: 14
-  })
+/* ---------- Panel Actions ---------- */
+function togglePanel() { showDetails.value = !showDetails.value }
+function mainAction() { journeyStarted.value ? stopJourney() : (routeInfo.value ? startJourney() : requestRoute()) }
 
-  map.on('load', () => updateMarkers())
-  connectSocket()
-})
+/* ---------- Map Interaction ---------- */
+function updateMarkers() {
+  if (!map) return
+  if (fromMarker) fromMarker.remove()
+  if (toMarker) toMarker.remove()
 
-onUnmounted(() => {
-  window.removeEventListener('resize', handleResize)
-  if (animationFrame) cancelAnimationFrame(animationFrame)
-  if (socket.value) socket.value.disconnect()
-  if (map) map.remove()
-})
+  fromMarker = new maplibregl.Marker({ color: '#10b981' }).setLngLat([fromCoords.value.lng, fromCoords.value.lat]).addTo(map)
+  toMarker = new maplibregl.Marker({ color: '#ef4444' }).setLngLat([toCoords.value.lng, toCoords.value.lat]).addTo(map)
+}
 
-watch([fromCoords, toCoords], () => updateMarkers(), { deep: true })
+function drawRoute(coords) {
+  if (!map) return
+  if (map.getLayer('route')) map.removeLayer('route')
+  if (map.getSource('route')) map.removeSource('route')
 
-watch(driverLocation, (newLocation) => {
-  if (newLocation && map) {
-    // Set target position for smooth animation
-    targetPosition = { lat: newLocation.lat, lng: newLocation.lng }
-    
-    if (!driverMarker) {
-      // Initialize marker at starting position
-      currentPosition = { ...targetPosition }
-      
-      const el = document.createElement('div')
-      el.className = 'driver-marker'
-      el.innerHTML = '🚗'
-      el.style.fontSize = '24px'
-      el.style.transition = 'transform 0.3s ease'
-      
-      driverMarker = new maplibregl.Marker({ element: el })
-        .setLngLat([currentPosition.lng, currentPosition.lat])
-        .addTo(map)
-    }
-    
-    // Start smooth animation
-    if (animationFrame) cancelAnimationFrame(animationFrame)
-    animationFrame = requestAnimationFrame(smoothUpdatePosition)
-    
-    // Smooth camera follow
-    map.easeTo({ 
-      center: [newLocation.lng, newLocation.lat], 
-      zoom: 15,
-      duration: 1000,
-      easing: (t) => t * (2 - t) // easeOutQuad
-    })
-  }
-})
+  map.addSource('route', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'LineString', coordinates: coords }}})
+  map.addLayer({ id: 'route', type: 'line', source: 'route', layout: { 'line-join': 'round','line-cap':'round'}, paint: {'line-color':'#3b82f6','line-width':5,'line-opacity':0.8}})
+  const bounds = coords.reduce((b, c) => b.extend(c), new maplibregl.LngLatBounds(coords[0], coords[0]))
+  map.fitBounds(bounds, { padding: 100 })
+}
 
+/* ---------- Socket & Journey ---------- */
 function connectSocket() {
-  try {
-    socket.value = io('http://localhost:4000')
-    socket.value.on('connect', () => connected.value = true)
-    socket.value.on('disconnect', () => connected.value = false)
-    socket.value.on('route-calculated', (data) => {
-      const coordinates = data.route?.coordinates || data.route?.geometry?.coordinates
-      if (!coordinates) return
-      route.value = coordinates
-      routeInfo.value = { distance: data.distanceKm.toFixed(2), eta: data.etaMinutes.toFixed(1) }
-      drawRoute(coordinates)
-    })
-    socket.value.on('driver-location', (data) => {
-      driverLocation.value = { lat: data.latitude, lng: data.longitude }
-    })
-  } catch(e) { console.log(e) }
+  socket.value = io('http://localhost:4000')
+  socket.value.on('connect', () => connected.value = true)
+  socket.value.on('disconnect', () => connected.value = false)
+  socket.value.on('route-calculated', data => {
+    const coords = data.route?.coordinates || data.route?.geometry?.coordinates
+    if (!coords) return
+    route.value = coords
+    routeInfo.value = { distance: data.distanceKm.toFixed(2), eta: data.etaMinutes.toFixed(1) }
+    drawRoute(coords)
+  })
+  socket.value.on('driver-location', data => { driverLocation.value = { lat: data.latitude, lng: data.longitude } })
 }
 
 function requestRoute() {
@@ -292,11 +204,18 @@ function requestRoute() {
 
 function startJourney() {
   if (!socket.value) return
-  socket.value.emit('start-tracking', { driverId: driverId.value, targetLat: toCoords.value.lat, targetLng: toCoords.value.lng })
+  socket.value.emit('start-tracking', { 
+    driverId: driverId.value, 
+    targetLat: toCoords.value.lat, 
+    targetLng: toCoords.value.lng,
+    startLat: fromCoords.value.lat,      // <-- add
+    startLng: fromCoords.value.lng       // <-- add
+  })
   tracking.value = true
   journeyStarted.value = true
   if (!isDesktop.value) showDetails.value = false
 }
+
 
 function stopJourney() {
   if (!socket.value) return
@@ -304,47 +223,59 @@ function stopJourney() {
   tracking.value = false
   journeyStarted.value = false
   driverLocation.value = null
-  if (animationFrame) {
-    cancelAnimationFrame(animationFrame)
-    animationFrame = null
-  }
-  if (driverMarker) {
-    driverMarker.remove()
-    driverMarker = null
-  }
+  if (animationFrame) cancelAnimationFrame(animationFrame)
+  if (driverMarker) { driverMarker.remove(); driverMarker = null }
 }
 
-function updateMarkers() {
-  if (!map) return
-  if (fromMarker) fromMarker.remove()
-  if (toMarker) toMarker.remove()
-  
-  fromMarker = new maplibregl.Marker({ color: '#10b981' })
-    .setLngLat([fromCoords.value.lng, fromCoords.value.lat]).addTo(map)
-  toMarker = new maplibregl.Marker({ color: '#ef4444' })
-    .setLngLat([toCoords.value.lng, toCoords.value.lat]).addTo(map)
-}
+/* ---------- Watchers ---------- */
+watch([fromCoords, toCoords], updateMarkers, { deep: true })
 
-function drawRoute(coordinates) {
-  if (!map) return
-  if (map.getLayer('route')) map.removeLayer('route')
-  if (map.getSource('route')) map.removeSource('route')
-  
-  map.addSource('route', {
-    type: 'geojson',
-    data: { type: 'Feature', geometry: { type: 'LineString', coordinates: coordinates }}
+watch(driverLocation, newLoc => {
+  if (!newLoc || !map) return
+  targetPosition = { ...newLoc }
+
+  if (!driverMarker) {
+    currentPosition = { ...targetPosition }
+    const el = document.createElement('div')
+    el.className = 'driver-marker'
+    el.innerHTML = '🚗'
+    el.style.fontSize = '24px'
+    driverMarker = new maplibregl.Marker({ element: el }).setLngLat([currentPosition.lng, currentPosition.lat]).addTo(map)
+  }
+
+  if (animationFrame) cancelAnimationFrame(animationFrame)
+  animationFrame = requestAnimationFrame(smoothUpdatePosition)
+
+  map.easeTo({ center: [newLoc.lng, newLoc.lat], zoom: 15, duration: 1000, easing: t => t*(2-t) })
+})
+
+/* ---------- Map Setup ---------- */
+onMounted(() => {
+  window.addEventListener('resize', handleResize)
+  map = new maplibregl.Map({
+    container: mapContainer.value,
+    style: { version: 8, sources: { osm: { type: 'raster', tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'], tileSize: 256, attribution:'© OSM', maxzoom:19 }}, layers:[{id:'osm', type:'raster', source:'osm'}] },
+    center: [fromCoords.value.lng, fromCoords.value.lat],
+    zoom: 14
   })
-  
-  map.addLayer({
-    id: 'route', type: 'line', source: 'route',
-    layout: { 'line-join': 'round', 'line-cap': 'round' },
-    paint: { 'line-color': '#3b82f6', 'line-width': 5, 'line-opacity': 0.8 }
-  })
-  
-  const bounds = coordinates.reduce((bounds, coord) => bounds.extend(coord), new maplibregl.LngLatBounds(coordinates[0], coordinates[0]))
-  map.fitBounds(bounds, { padding: 100 })
-}
+
+  map.on('load', updateMarkers)
+  map.on('click', (e) => { fromCoords.value = { lat: e.lngLat.lat, lng: e.lngLat.lng } }) // Click to set "from" for now
+  connectSocket()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  if (animationFrame) cancelAnimationFrame(animationFrame)
+  if (socket.value) socket.value.disconnect()
+  if (map) map.remove()
+})
 </script>
+
+<style scoped>
+/* Keep your existing styles here, optionally remove duplicates */
+</style>
+
 
 <style scoped>
 * {

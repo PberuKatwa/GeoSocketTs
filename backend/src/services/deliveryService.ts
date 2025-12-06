@@ -58,7 +58,9 @@ export const drivers = new Map<string, Driver>();
 export async function startDriverSimulation(
     driverId: string,
     targetLat?: number,
-    targetLng?: number
+    targetLng?: number,
+    startLat?: number,     // new
+    startLng?: number      // new
 ) {
     let driver: Driver;
 
@@ -78,18 +80,19 @@ export async function startDriverSimulation(
             driver.currentPathIndex = 0;
         }
     } else {
-        const startLat = -1.286389;
-        const startLng = 36.817223;
+        // Use startLat/startLng if provided, else fallback
+        const initLat = startLat ?? -1.286389;
+        const initLng = startLng ?? 36.817223;
 
         let path: [number, number][] | undefined;
 
         if (targetLat !== undefined && targetLng !== undefined) {
-            path = await fetchOsrmPath([startLng, startLat], [targetLng, targetLat]);
+            path = await fetchOsrmPath([initLng, initLat], [targetLng, targetLat]);
         }
 
         driver = {
-            lat: startLat,
-            lng: startLng,
+            lat: initLat,
+            lng: initLng,
             targetLat,
             targetLng,
             path,
@@ -99,9 +102,7 @@ export async function startDriverSimulation(
         drivers.set(driverId, driver);
     }
 
-    driver.interval = setInterval(() => {
-        tickDriver(driver);
-    }, 1000);
+    driver.interval = setInterval(() => tickDriver(driver), 1000);
 }
 
 // ------------------------------------------------------------
