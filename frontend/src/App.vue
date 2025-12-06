@@ -26,6 +26,52 @@
       </div>
     </div>
 
+    <!-- Bottom Nav (Mobile) -->
+    <div class="bottom-nav">
+      <div class="nav-content">
+        <button @click="toggleSidebar" class="nav-menu-btn">
+          <span class="icon">☰</span>
+        </button>
+        
+        <div class="nav-info" v-if="routeInfo">
+          <div class="nav-stat">
+            <span class="stat-icon">📏</span>
+            <span class="stat-text">{{ routeInfo.distance }} km</span>
+          </div>
+          <div class="nav-divider"></div>
+          <div class="nav-stat">
+            <span class="stat-icon">⏱️</span>
+            <span class="stat-text">{{ routeInfo.eta }} min</span>
+          </div>
+        </div>
+        
+        <div class="nav-info placeholder" v-else>
+          <span class="placeholder-text">Set route to begin</span>
+        </div>
+        
+        <button 
+          v-if="!journeyStarted" 
+          @click="routeInfo ? startJourney() : toggleSidebar()" 
+          class="nav-action-btn"
+          :class="{ active: routeInfo }"
+          :disabled="!connected"
+        >
+          <span class="icon">▶️</span>
+        </button>
+        <button 
+          v-else 
+          @click="stopJourney" 
+          class="nav-action-btn danger"
+        >
+          <span class="icon">⏹️</span>
+        </button>
+      </div>
+      
+      <div class="nav-progress" v-if="journeyStarted">
+        <div class="progress-bar"></div>
+      </div>
+    </div>
+
     <!-- Overlay -->
     <div class="overlay" v-if="sidebarOpen" @click="toggleSidebar"></div>
 
@@ -1001,5 +1047,149 @@ onUnmounted(() => {
 /* Driver Marker */
 .driver-marker {
   will-change: transform;
+}
+
+/* Bottom Navigation (Mobile) */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  z-index: 25;
+  box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.1);
+  border-radius: 20px 20px 0 0;
+}
+
+.nav-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+}
+
+.nav-menu-btn {
+  width: 48px;
+  height: 48px;
+  background: #f3f4f6;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.nav-menu-btn:active {
+  transform: scale(0.95);
+  background: #e5e7eb;
+}
+
+.nav-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 8px;
+}
+
+.nav-info.placeholder {
+  justify-content: center;
+}
+
+.placeholder-text {
+  font-size: 13px;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.nav-stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stat-icon {
+  font-size: 16px;
+}
+
+.stat-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.nav-divider {
+  width: 1px;
+  height: 20px;
+  background: #e5e7eb;
+}
+
+.nav-action-btn {
+  width: 48px;
+  height: 48px;
+  background: #e5e7eb;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.nav-action-btn.active {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.nav-action-btn.danger {
+  background: #fee2e2;
+}
+
+.nav-action-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.nav-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.nav-progress {
+  height: 3px;
+  background: #f3f4f6;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #2563eb, #3b82f6);
+  background-size: 200% 100%;
+  animation: progressFlow 2s linear infinite;
+}
+
+@keyframes progressFlow {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Hide bottom nav on desktop */
+@media (min-width: 768px) {
+  .bottom-nav {
+    display: none;
+  }
+}
+
+/* Adjust map padding on mobile to account for bottom nav */
+@media (max-width: 767px) {
+  #map {
+    padding-bottom: 80px;
+  }
 }
 </style>
