@@ -159,6 +159,11 @@ let fromMarker = null
 let toMarker = null
 let driverMarker = null
 
+// Smooth animation state
+let animationFrame = null
+let currentPosition = { lat: 0, lng: 0 }
+let targetPosition = { lat: 0, lng: 0 }
+
 function togglePanel() {
   showDetails.value = !showDetails.value
 }
@@ -169,7 +174,28 @@ function mainAction() {
   else requestRoute()
 }
 
-// ... [Keep existing Map/Socket logic exactly the same below] ...
+// Smooth animation function
+function smoothUpdatePosition() {
+  const lerp = (start, end, factor) => start + (end - start) * factor
+  const smoothFactor = 0.15 // Lower = smoother but slower
+  
+  currentPosition.lat = lerp(currentPosition.lat, targetPosition.lat, smoothFactor)
+  currentPosition.lng = lerp(currentPosition.lng, targetPosition.lng, smoothFactor)
+  
+  if (driverMarker) {
+    driverMarker.setLngLat([currentPosition.lng, currentPosition.lat])
+  }
+  
+  // Continue animation if not close enough to target
+  const distance = Math.sqrt(
+    Math.pow(targetPosition.lat - currentPosition.lat, 2) + 
+    Math.pow(targetPosition.lng - currentPosition.lng, 2)
+  )
+  
+  if (distance > 0.000001) {
+    animationFrame = requestAnimationFrame(smoothUpdatePosition)
+  }
+}
 
 onMounted(() => {
   window.addEventListener('resize', handleResize)
@@ -199,6 +225,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
+  if (animationFrame) cancelAnimationFrame(animationFrame)
   if (socket.value) socket.value.disconnect()
   if (map) map.remove()
 })
@@ -207,23 +234,39 @@ watch([fromCoords, toCoords], () => updateMarkers(), { deep: true })
 
 watch(driverLocation, (newLocation) => {
   if (newLocation && map) {
-    if (driverMarker) {
-      driverMarker.setLngLat([newLocation.lng, newLocation.lat])
-    } else {
+    // Set target position for smooth animation
+    targetPosition = { lat: newLocation.lat, lng: newLocation.lng }
+    
+    if (!driverMarker) {
+      // Initialize marker at starting position
+      currentPosition = { ...targetPosition }
+      
       const el = document.createElement('div')
       el.className = 'driver-marker'
       el.innerHTML = '🚗'
       el.style.fontSize = '24px'
+      el.style.transition = 'transform 0.3s ease'
+      
       driverMarker = new maplibregl.Marker({ element: el })
-        .setLngLat([newLocation.lng, newLocation.lat])
+        .setLngLat([currentPosition.lng, currentPosition.lat])
         .addTo(map)
     }
-    map.flyTo({ center: [newLocation.lng, newLocation.lat], zoom: 15 })
+    
+    // Start smooth animation
+    if (animationFrame) cancelAnimationFrame(animationFrame)
+    animationFrame = requestAnimationFrame(smoothUpdatePosition)
+    
+    // Smooth camera follow
+    map.easeTo({ 
+      center: [newLocation.lng, newLocation.lat], 
+      zoom: 15,
+      duration: 1000,
+      easing: (t) => t * (2 - t) // easeOutQuad
+    })
   }
 })
 
 function connectSocket() {
-  // Mocking socket for UI demonstration if server isn't running
   try {
     socket.value = io('http://localhost:4000')
     socket.value.on('connect', () => connected.value = true)
@@ -244,7 +287,7 @@ function connectSocket() {
 function requestRoute() {
   if (!socket.value) return
   socket.value.emit('calculate-route', { from: fromCoords.value, to: toCoords.value })
-  if (!isDesktop.value) showDetails.value = false // Auto collapse on mobile
+  if (!isDesktop.value) showDetails.value = false
 }
 
 function startJourney() {
@@ -261,6 +304,10 @@ function stopJourney() {
   tracking.value = false
   journeyStarted.value = false
   driverLocation.value = null
+  if (animationFrame) {
+    cancelAnimationFrame(animationFrame)
+    animationFrame = null
+  }
   if (driverMarker) {
     driverMarker.remove()
     driverMarker = null
@@ -300,7 +347,6 @@ function drawRoute(coordinates) {
 </script>
 
 <style scoped>
-/* Base Reset */
 * {
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
@@ -323,7 +369,6 @@ function drawRoute(coordinates) {
 
 #map { width: 100%; height: 100%; }
 
-/* --- Status Pill --- */
 .status-pill {
   position: absolute;
   top: 16px; right: 16px;
@@ -344,14 +389,24 @@ function drawRoute(coordinates) {
   width: 8px; height: 8px;
   border-radius: 50%;
   background: #ccc;
+  transition: all 0.3s ease;
 }
 
-.status-pill.connected .status-dot { background: #10b981; box-shadow: 0 0 8px #10b981; }
+.status-pill.connected .status-dot { 
+  background: #10b981; 
+  box-shadow: 0 0 8px #10b981;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
 .status-pill.connected { color: #064e3b; }
 .status-pill.disconnected .status-dot { background: #ef4444; }
 .status-pill.disconnected { color: #7f1d1d; }
 
-/* --- Navigation Panel (Shared) --- */
 .nav-panel {
   position: absolute;
   z-index: 20;
@@ -361,7 +416,6 @@ function drawRoute(coordinates) {
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* --- Mobile Specific Styles (Bottom Sheet) --- */
 @media (max-width: 767px) {
   .nav-panel {
     bottom: 0;
@@ -373,7 +427,6 @@ function drawRoute(coordinates) {
   }
 
   .nav-panel:not(.is-expanded) {
-    /* Only show compact view + handle */
     transform: translateY(0); 
   }
   
@@ -384,13 +437,12 @@ function drawRoute(coordinates) {
   }
 }
 
-/* --- Desktop Specific Styles (Floating Card) --- */
 @media (min-width: 768px) {
   .nav-panel {
     top: 20px;
     left: 20px;
     width: 380px;
-    bottom: auto; /* Reset bottom */
+    bottom: auto;
     border-radius: 16px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.12);
   }
@@ -407,9 +459,6 @@ function drawRoute(coordinates) {
   }
 }
 
-/* --- UI Components --- */
-
-/* Handle */
 .panel-handle {
   width: 100%;
   padding: 12px 0;
@@ -422,9 +471,13 @@ function drawRoute(coordinates) {
   width: 40px; height: 5px;
   background: #e5e7eb;
   border-radius: 10px;
+  transition: background 0.2s;
 }
 
-/* Compact View (Mobile) */
+.panel-handle:active .handle-bar {
+  background: #d1d5db;
+}
+
 .compact-header {
   padding: 0 20px 20px 20px;
   display: flex;
@@ -469,13 +522,12 @@ function drawRoute(coordinates) {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.1s;
+  transition: all 0.2s ease;
 }
 
 .btn-icon:active { transform: scale(0.95); }
 .btn-icon.primary { background: #3b82f6; color: white; }
 
-/* Expanded / Desktop Content */
 .section-title {
   font-size: 12px;
   text-transform: uppercase;
@@ -485,7 +537,6 @@ function drawRoute(coordinates) {
   margin-bottom: 16px;
 }
 
-/* Inputs */
 .input-group { margin-bottom: 16px; }
 .input-field input {
   width: 100%;
@@ -495,7 +546,7 @@ function drawRoute(coordinates) {
   border-radius: 10px;
   font-size: 14px;
   outline: none;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
 .input-field input:focus {
@@ -533,9 +584,19 @@ function drawRoute(coordinates) {
   border-radius: 6px;
   font-size: 13px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  transition: box-shadow 0.2s ease;
 }
 
-.point-icon { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.coord-group input:focus {
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+}
+
+.point-icon { 
+  width: 10px; height: 10px; 
+  border-radius: 50%; 
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
 .point-icon.start { background: #10b981; }
 .point-icon.end { background: #ef4444; }
 
@@ -545,7 +606,6 @@ function drawRoute(coordinates) {
   margin: 4px 0 4px 4px;
 }
 
-/* Stats Card */
 .stats-card {
   display: flex;
   background: #eff6ff;
@@ -566,7 +626,6 @@ function drawRoute(coordinates) {
 .stat-item .value { font-size: 18px; font-weight: 700; color: #1e40af; }
 .vertical-divider { width: 1px; height: 30px; background: rgba(59, 130, 246, 0.2); }
 
-/* Buttons */
 .action-grid {
   display: grid;
   gap: 10px;
@@ -580,7 +639,7 @@ function drawRoute(coordinates) {
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
 .btn:active { transform: scale(0.98); }
@@ -596,5 +655,10 @@ function drawRoute(coordinates) {
   color: #9ca3af;
   text-align: center;
   font-family: monospace;
+}
+
+/* Smooth marker animation */
+.driver-marker {
+  will-change: transform;
 }
 </style>

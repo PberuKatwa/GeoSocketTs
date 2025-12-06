@@ -1,27 +1,44 @@
-import * as turf from "@turf/turf";
+import axios from "axios";
 
-export function computeRoute(
+const OSRM_URL = "http://localhost:5000";
+
+// ------------------------------
+// Compute route using OSRM
+// ------------------------------
+export async function computeRoute(
     from: [number, number],
     to: [number, number]
 ) {
     try {
-        const fromPoint = turf.point(from);
-        const toPoint = turf.point(to);
+        const url = `${OSRM_URL}/route/v1/driving/${from[0]},${from[1]};${to[0]},${to[1]}?overview=full&geometries=geojson`;
 
-        const distanceKm = turf.distance(fromPoint, toPoint, { units: "kilometers" });
-        const etaMinutes = (distanceKm / 30) * 60;
+        const res = await axios.get(url);
 
-        const route = turf.lineString([from, to]);
+        if (res.data.code !== "Ok") {
+            throw new Error("OSRM routing failed");
+        }
+
+        const route = res.data.routes[0];
+        const distanceKm = route.distance / 1000;
+        const etaMinutes = route.duration / 60;
+
+        // Coordinates as [lng, lat][]
+        const path = route.geometry.coordinates;
 
         return {
             distanceKm,
             etaMinutes,
-            route
-        }
-    } catch (error) {
-        throw error;
+            path
+        };
+    } catch (err) {
+        console.error("OSRM route error", err);
+        throw err;
     }
 }
+
+// --------------------------------------------------
+// Driver Simulation
+// --------------------------------------------------
 
 interface Driver {
     lat: number;
@@ -35,127 +52,108 @@ interface Driver {
 
 export const drivers = new Map<string, Driver>();
 
-export function startDriverSimulation(
+// ----------------------------------------------------------------
+// Start simulation (uses OSRM to fetch an actual road-path)
+// ----------------------------------------------------------------
+export async function startDriverSimulation(
     driverId: string,
     targetLat?: number,
     targetLng?: number
 ) {
-    // If driver already exists, update target and restart simulation
+    let driver: Driver;
+
     if (drivers.has(driverId)) {
-        const driver = drivers.get(driverId)!;
-        if (driver.interval) {
-            clearInterval(driver.interval);
-        }
+        driver = drivers.get(driverId)!;
+
+        if (driver.interval) clearInterval(driver.interval);
+
         if (targetLat !== undefined && targetLng !== undefined) {
             driver.targetLat = targetLat;
             driver.targetLng = targetLng;
-            // Generate new path
-            driver.path = generatePath(
+
+            driver.path = await fetchOsrmPath(
                 [driver.lng, driver.lat],
                 [targetLng, targetLat]
             );
             driver.currentPathIndex = 0;
         }
     } else {
-        // Initialize new driver at starting position
         const startLat = -1.286389;
         const startLng = 36.817223;
-        
-        const path = targetLat !== undefined && targetLng !== undefined
-            ? generatePath([startLng, startLat], [targetLng, targetLat])
-            : undefined;
 
-        drivers.set(driverId, {
+        let path: [number, number][] | undefined;
+
+        if (targetLat !== undefined && targetLng !== undefined) {
+            path = await fetchOsrmPath([startLng, startLat], [targetLng, targetLat]);
+        }
+
+        driver = {
             lat: startLat,
             lng: startLng,
             targetLat,
             targetLng,
             path,
             currentPathIndex: 0
-        });
+        };
+
+        drivers.set(driverId, driver);
     }
 
-    const driver = drivers.get(driverId)!;
-
-    const interval = setInterval(() => {
-        if (driver.path && driver.currentPathIndex !== undefined) {
-            // Move along predefined path
-            moveAlongPath(driver);
-        } else if (driver.targetLat !== undefined && driver.targetLng !== undefined) {
-            // Move directly towards target
-            moveTowardsTarget(driver, driver.targetLat, driver.targetLng);
-        } else {
-            // Random movement (original behavior)
-            driver.lat += (Math.random() - 0.5) * 0.0002;
-            driver.lng += (Math.random() - 0.5) * 0.0002;
-        }
+    driver.interval = setInterval(() => {
+        tickDriver(driver);
     }, 1000);
-
-    driver.interval = interval;
 }
 
-function generatePath(
+// ------------------------------------------------------------
+// Fetch OSRM geometry only
+// ------------------------------------------------------------
+async function fetchOsrmPath(
     from: [number, number],
-    to: [number, number],
-    numPoints: number = 50
-): [number, number][] {
-    const line = turf.lineString([from, to]);
-    const length = turf.length(line, { units: "kilometers" });
-    const path: [number, number][] = [];
+    to: [number, number]
+): Promise<[number, number][]> {
+    try {
+        const data = await computeRoute(from, to);
+        return data.path;
+    } catch (err) {
+        console.error("Failed to fetch OSRM path, driver will not move.", err);
+        return [];
+    }
+}
 
-    for (let i = 0; i <= numPoints; i++) {
-        const along = turf.along(line, (length * i) / numPoints, { units: "kilometers" });
-        path.push(along.geometry.coordinates as [number, number]);
+// ------------------------------------------------------------
+// Move 1 step along OSRM polyline
+// ------------------------------------------------------------
+function tickDriver(driver: Driver) {
+    if (!driver.path || driver.currentPathIndex === undefined || driver.path.length === 0) {
+        // No route available → stand still
+        return;
     }
 
-    return path;
-}
+    const index = driver.currentPathIndex;
 
-function moveAlongPath(driver: Driver) {
-    if (!driver.path || driver.currentPathIndex === undefined) return;
-
-    if (driver.currentPathIndex < driver.path.length) {
-        const [lng, lat] = driver.path[driver.currentPathIndex];
+    // Still moving
+    if (index < driver.path.length - 1) {
+        const [lng, lat] = driver.path[index];
         driver.lng = lng;
         driver.lat = lat;
         driver.currentPathIndex++;
-    } else {
-        // Reached destination - stop moving
-        if (driver.targetLat !== undefined && driver.targetLng !== undefined) {
-            driver.lat = driver.targetLat;
-            driver.lng = driver.targetLng;
-        }
-    }
-}
-
-function moveTowardsTarget(driver: Driver, targetLat: number, targetLng: number) {
-    const from = turf.point([driver.lng, driver.lat]);
-    const to = turf.point([targetLng, targetLat]);
-    
-    const distance = turf.distance(from, to, { units: "kilometers" });
-    
-    // If very close to target, snap to it
-    if (distance < 0.01) {
-        driver.lat = targetLat;
-        driver.lng = targetLng;
         return;
     }
-    
-    // Move a small step towards target (approximately 30 km/h = 0.00833 km/s)
-    const stepSize = 0.01; // km per second
-    const bearing = turf.bearing(from, to);
-    const destination = turf.destination(from, stepSize, bearing, { units: "kilometers" });
-    
-    driver.lat = destination.geometry.coordinates[1];
-    driver.lng = destination.geometry.coordinates[0];
+
+    // Reached destination
+    if (driver.targetLat !== undefined && driver.targetLng !== undefined) {
+        driver.lat = driver.targetLat;
+        driver.lng = driver.targetLng;
+    }
 }
 
-// Add this function to your existing deliveryService.ts
+// --------------------------------------------------
+// Stop driver simulation
+// --------------------------------------------------
 export function stopDriverSimulation(driverId: string) {
-  const driver = drivers.get(driverId);
-  if (driver?.interval) {
-    clearInterval(driver.interval);
-    driver.interval = undefined;
-  }
-  drivers.delete(driverId);
+    const driver = drivers.get(driverId);
+    if (driver?.interval) {
+        clearInterval(driver.interval);
+    }
+    drivers.delete(driverId);
 }

@@ -1,9 +1,15 @@
 import { Server } from "socket.io";
 import { createServer } from "http";
-import { computeRoute, startDriverSimulation, stopDriverSimulation, drivers } from "./deliveryService.js";
+import { 
+  computeRoute, 
+  startDriverSimulation, 
+  stopDriverSimulation, 
+  drivers 
+} from "./deliveryService.js";
 
 export function createSocketIOServer(port: number) {
   const httpServer = createServer();
+
   const io = new Server(httpServer, {
     cors: {
       origin: "*",
@@ -13,24 +19,29 @@ export function createSocketIOServer(port: number) {
 
   console.log(`Socket.IO Server running at http://localhost:${port}`);
 
+  // -----------------------------------------------------
+  // CONNECTION
+  // -----------------------------------------------------
   io.on("connection", (socket) => {
     console.log(`Client connected: ${socket.id}`);
 
-    // Handle route calculation
-    socket.on("calculate-route", ({ from, to }) => {
+    // -----------------------------------------------------
+    // CALCULATE ROUTE USING OSRM
+    // -----------------------------------------------------
+    socket.on("calculate-route", async ({ from, to }) => {
       try {
-        const result = computeRoute(
+        const result = await computeRoute(
           [from.lng, from.lat],
           [to.lng, to.lat]
         );
 
-        // IMPORTANT: Return coordinates properly
         socket.emit("route-calculated", {
           distanceKm: result.distanceKm,
           etaMinutes: result.etaMinutes,
+          // Return OSRM polyline as GeoJSON-style LineString
           route: {
-            type: result.route.geometry.type,
-            coordinates: result.route.geometry.coordinates  // Access the geometry.coordinates
+            type: "LineString",
+            coordinates: result.path  // path is already [lng,lat][]
           }
         });
       } catch (error) {
@@ -39,14 +50,18 @@ export function createSocketIOServer(port: number) {
       }
     });
 
-    // Handle driver tracking start
-    socket.on("start-tracking", ({ driverId, targetLat, targetLng }) => {
+    // -----------------------------------------------------
+    // DRIVER TRACKING (REAL ROAD MOVEMENT)
+    // -----------------------------------------------------
+    socket.on("start-tracking", async ({ driverId, targetLat, targetLng }) => {
       console.log(`Starting tracking for ${driverId}`);
-      
-      socket.join(`driver-${driverId}`);
-      
-      startDriverSimulation(driverId, targetLat, targetLng);
 
+      socket.join(`driver-${driverId}`);
+
+      // Start simulation → fetch OSRM route
+      await startDriverSimulation(driverId, targetLat, targetLng);
+
+      // Emit driver position every second
       const interval = setInterval(() => {
         const driver = drivers.get(driverId);
         if (!driver) {
@@ -61,11 +76,13 @@ export function createSocketIOServer(port: number) {
         });
       }, 1000);
 
+      // When this socket disconnects
       socket.on("disconnect", () => {
         clearInterval(interval);
         socket.leave(`driver-${driverId}`);
       });
 
+      // Stop tracking manually
       socket.on("stop-tracking", () => {
         clearInterval(interval);
         stopDriverSimulation(driverId);
@@ -73,6 +90,9 @@ export function createSocketIOServer(port: number) {
       });
     });
 
+    // -----------------------------------------------------
+    // HANDLE DISCONNECT
+    // -----------------------------------------------------
     socket.on("disconnect", () => {
       console.log(`Client disconnected: ${socket.id}`);
     });
