@@ -7,6 +7,15 @@
         <span class="status-dot"></span>
         {{ connected ? 'Live' : 'Offline' }}
       </div>
+      
+      <!-- Location Picker Mode -->
+      <div class="picker-mode" v-if="pickerMode !== 'none'">
+        <div class="picker-content">
+          <span class="picker-icon">{{ pickerMode === 'driver' ? '🚗' : '📍' }}</span>
+          <span class="picker-text">Tap map to set {{ pickerMode === 'driver' ? 'Driver' : 'User' }} location</span>
+          <button @click="pickerMode = 'none'" class="picker-close">✕</button>
+        </div>
+      </div>
     </div>
 
     <!-- Sidebar / Panel -->
@@ -52,19 +61,31 @@
 
         <!-- Location Inputs -->
         <div class="location-inputs">
+          <div class="location-header">
+            <span class="location-label">🚗 Driver Location</span>
+            <button @click="setPickerMode('driver')" class="btn-map-pick" :disabled="tracking">
+              📍 Pick on Map
+            </button>
+          </div>
           <div class="input-row">
-            <div class="point-icon start"></div>
             <div class="coord-group">
-              <input v-model.number="fromCoords.lat" type="number" step="0.000001" placeholder="Lat" />
-              <input v-model.number="fromCoords.lng" type="number" step="0.000001" placeholder="Lng" />
+              <input v-model.number="fromCoords.lat" type="number" step="0.000001" placeholder="Latitude" :disabled="tracking" />
+              <input v-model.number="fromCoords.lng" type="number" step="0.000001" placeholder="Longitude" :disabled="tracking" />
             </div>
           </div>
+          
           <div class="connector-line"></div>
+          
+          <div class="location-header">
+            <span class="location-label">📍 User Location</span>
+            <button @click="setPickerMode('user')" class="btn-map-pick" :disabled="tracking">
+              📍 Pick on Map
+            </button>
+          </div>
           <div class="input-row">
-            <div class="point-icon end"></div>
             <div class="coord-group">
-              <input v-model.number="toCoords.lat" type="number" step="0.000001" placeholder="Lat" />
-              <input v-model.number="toCoords.lng" type="number" step="0.000001" placeholder="Lng" />
+              <input v-model.number="toCoords.lat" type="number" step="0.000001" placeholder="Latitude" :disabled="tracking" />
+              <input v-model.number="toCoords.lng" type="number" step="0.000001" placeholder="Longitude" :disabled="tracking" />
             </div>
           </div>
         </div>
@@ -131,6 +152,7 @@ const route = ref(null)
 const routeInfo = ref(null)
 const driverLocation = ref(null)
 const driverId = ref('driver-001')
+const pickerMode = ref('none') // 'none', 'driver', 'user'
 
 /* ---------- WebSocket ---------- */
 const socket = ref(null)
@@ -159,6 +181,11 @@ function smoothUpdatePosition() {
 /* ---------- Panel Actions ---------- */
 function togglePanel() { showDetails.value = !showDetails.value }
 function mainAction() { journeyStarted.value ? stopJourney() : (routeInfo.value ? startJourney() : requestRoute()) }
+
+function setPickerMode(mode) {
+  pickerMode.value = mode
+  if (!isDesktop.value) showDetails.value = false
+}
 
 /* ---------- Map Interaction ---------- */
 function updateMarkers() {
@@ -260,7 +287,15 @@ onMounted(() => {
   })
 
   map.on('load', updateMarkers)
-  map.on('click', (e) => { fromCoords.value = { lat: e.lngLat.lat, lng: e.lngLat.lng } }) // Click to set "from" for now
+  map.on('click', (e) => {
+    if (pickerMode.value === 'driver') {
+      fromCoords.value = { lat: e.lngLat.lat, lng: e.lngLat.lng }
+      pickerMode.value = 'none'
+    } else if (pickerMode.value === 'user') {
+      toCoords.value = { lat: e.lngLat.lat, lng: e.lngLat.lng }
+      pickerMode.value = 'none'
+    }
+  })
   connectSocket()
 })
 
@@ -495,10 +530,56 @@ onUnmounted(() => {
   margin-bottom: 20px;
 }
 
+.location-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.location-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.btn-map-pick {
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-map-pick:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.btn-map-pick:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.btn-map-pick:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .input-row {
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-bottom: 12px;
+}
+
+.input-row:last-child {
+  margin-bottom: 0;
 }
 
 .coord-group {
@@ -532,9 +613,107 @@ onUnmounted(() => {
 .point-icon.end { background: #ef4444; }
 
 .connector-line {
-  width: 2px; height: 20px;
+  width: 2px; height: 16px;
   background: #e5e7eb;
-  margin: 4px 0 4px 4px;
+  margin: 8px 0 8px 8px;
+}
+
+.picker-mode {
+  position: absolute;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.picker-content {
+  background: rgba(59, 130, 246, 0.95);
+  backdrop-filter: blur(10px);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 30px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.picker-icon {
+  font-size: 20px;
+}
+
+.picker-text {
+  white-space: nowrap;
+}
+
+.picker-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: background 0.2s ease;
+  margin-left: 4px;
+}
+
+.picker-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.picker-close:active {
+  transform: scale(0.9);
+}
+
+@media (max-width: 767px) {
+  .picker-mode {
+    top: 60px;
+    left: 16px;
+    right: 16px;
+    transform: none;
+  }
+  
+  .picker-content {
+    width: 100%;
+    justify-content: center;
+    font-size: 13px;
+    padding: 10px 16px;
+  }
+  
+  .picker-text {
+    white-space: normal;
+    text-align: center;
+    flex: 1;
+  }
+  
+  .location-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  
+  .btn-map-pick {
+    width: 100%;
+  }
 }
 
 .stats-card {
