@@ -3,123 +3,105 @@
     <!-- Map Container -->
     <div class="map-wrapper">
       <div id="map" ref="mapContainer"></div>
-      <div class="status-pill" :class="{ connected: connected, disconnected: !connected }">
-        <span class="status-dot"></span>
-        {{ connected ? 'Live' : 'Offline' }}
+      
+      <!-- Top Bar Controls -->
+      <div class="top-bar">
+        <button @click="toggleSidebar" class="hamburger-btn" :class="{ active: sidebarOpen }">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        
+        <div class="status-indicator" :class="{ connected: connected }">
+          <span class="dot"></span>
+          <span class="text">{{ connected ? 'Live' : 'Offline' }}</span>
+        </div>
       </div>
       
       <!-- Location Picker Mode -->
-      <div class="picker-mode" v-if="pickerMode !== 'none'">
-        <div class="picker-content">
-          <span class="picker-icon">{{ pickerMode === 'driver' ? '🚗' : '📍' }}</span>
-          <span class="picker-text">Tap map to set {{ pickerMode === 'driver' ? 'Driver' : 'User' }} location</span>
-          <button @click="pickerMode = 'none'" class="picker-close">✕</button>
-        </div>
+      <div class="picker-banner" v-if="pickerMode !== 'none'">
+        <span class="icon">{{ pickerMode === 'driver' ? '🚗' : '📍' }}</span>
+        <span class="text">Tap map to set {{ pickerMode === 'driver' ? 'driver' : 'user' }} location</span>
+        <button @click="pickerMode = 'none'" class="close-btn">✕</button>
       </div>
     </div>
 
-    <!-- Sidebar / Panel -->
-    <div class="nav-panel" :class="{ 'is-expanded': showDetails }">
-      <!-- Handle for mobile -->
-      <div class="panel-handle" @click="togglePanel">
-        <div class="handle-bar"></div>
+    <!-- Overlay -->
+    <div class="overlay" v-if="sidebarOpen" @click="toggleSidebar"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" :class="{ open: sidebarOpen }">
+      <div class="sidebar-header">
+        <h2>Trip Control</h2>
+        <button @click="toggleSidebar" class="close-sidebar">✕</button>
       </div>
 
-      <!-- Compact Header for Mobile -->
-      <div class="compact-header" v-show="!isDesktop && !showDetails">
-        <div class="trip-summary">
-          <div class="driver-badge">
-            <span class="icon">🚗</span>
-            <span class="text">{{ driverId }}</span>
-          </div>
-          <div class="meta" v-if="routeInfo">
-            <span>{{ routeInfo.eta }} min</span>
-            <span class="divider">•</span>
-            <span>{{ routeInfo.distance }} km</span>
-          </div>
-          <div class="meta placeholder" v-else>Ready to route</div>
-        </div>
-        <div class="compact-actions">
-          <button @click.stop="togglePanel" class="btn-icon">⚙️</button>
-          <button @click.stop="mainAction" class="btn-icon primary" :disabled="!connected">
-            {{ journeyStarted ? '⏹️' : '▶️' }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Panel Content -->
-      <div class="panel-content" v-show="isDesktop || showDetails">
-        <div class="section-title">Trip Configuration</div>
-
+      <div class="sidebar-content">
         <!-- Driver ID -->
-        <div class="input-group">
-          <div class="input-field">
-            <label>Driver ID</label>
-            <input v-model="driverId" type="text" :disabled="tracking" placeholder="ID..." />
-          </div>
+        <div class="form-group">
+          <label class="form-label">Driver ID</label>
+          <input v-model="driverId" type="text" :disabled="tracking" placeholder="Enter driver ID" class="form-input" />
         </div>
 
-        <!-- Location Inputs -->
-        <div class="location-inputs">
-          <div class="location-header">
-            <span class="location-label">🚗 Driver Location</span>
-            <button @click="setPickerMode('driver')" class="btn-map-pick" :disabled="tracking">
-              📍 Pick on Map
+        <!-- Locations -->
+        <div class="form-group">
+          <div class="location-row">
+            <label class="form-label">🚗 Driver</label>
+            <button @click="setPickerMode('driver')" class="pick-btn" :disabled="tracking">
+              <span>📍</span> Pick
             </button>
           </div>
-          <div class="input-row">
-            <div class="coord-group">
-              <input v-model.number="fromCoords.lat" type="number" step="0.000001" placeholder="Latitude" :disabled="tracking" />
-              <input v-model.number="fromCoords.lng" type="number" step="0.000001" placeholder="Longitude" :disabled="tracking" />
-            </div>
+          <div class="coords-input">
+            <input v-model.number="fromCoords.lat" type="number" step="0.000001" placeholder="Lat" :disabled="tracking" class="coord-field" />
+            <input v-model.number="fromCoords.lng" type="number" step="0.000001" placeholder="Lng" :disabled="tracking" class="coord-field" />
           </div>
-          
-          <div class="connector-line"></div>
-          
-          <div class="location-header">
-            <span class="location-label">📍 User Location</span>
-            <button @click="setPickerMode('user')" class="btn-map-pick" :disabled="tracking">
-              📍 Pick on Map
+        </div>
+
+        <div class="form-group">
+          <div class="location-row">
+            <label class="form-label">📍 User</label>
+            <button @click="setPickerMode('user')" class="pick-btn" :disabled="tracking">
+              <span>📍</span> Pick
             </button>
           </div>
-          <div class="input-row">
-            <div class="coord-group">
-              <input v-model.number="toCoords.lat" type="number" step="0.000001" placeholder="Latitude" :disabled="tracking" />
-              <input v-model.number="toCoords.lng" type="number" step="0.000001" placeholder="Longitude" :disabled="tracking" />
-            </div>
+          <div class="coords-input">
+            <input v-model.number="toCoords.lat" type="number" step="0.000001" placeholder="Lat" :disabled="tracking" class="coord-field" />
+            <input v-model.number="toCoords.lng" type="number" step="0.000001" placeholder="Lng" :disabled="tracking" class="coord-field" />
           </div>
         </div>
 
-        <!-- Route Stats -->
-        <div class="stats-card" v-if="routeInfo">
-          <div class="stat-item">
-            <span class="label">Distance</span>
-            <span class="value">{{ routeInfo.distance }} <small>km</small></span>
+        <!-- Route Info -->
+        <div class="route-info" v-if="routeInfo">
+          <div class="info-item">
+            <span class="info-label">Distance</span>
+            <span class="info-value">{{ routeInfo.distance }} km</span>
           </div>
-          <div class="vertical-divider"></div>
-          <div class="stat-item">
-            <span class="label">Est. Time</span>
-            <span class="value">{{ routeInfo.eta }} <small>min</small></span>
+          <div class="info-item">
+            <span class="info-label">Est. Time</span>
+            <span class="info-value">{{ routeInfo.eta }} min</span>
           </div>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="action-grid">
-          <button @click="requestRoute" class="btn btn-secondary" :disabled="!connected">
+        <!-- Actions -->
+        <div class="actions">
+          <button @click="requestRoute" class="action-btn secondary" :disabled="!connected">
             Calculate Route
           </button>
-          <button v-if="!journeyStarted" @click="startJourney" class="btn btn-primary" :disabled="!connected || !routeInfo">
+          <button v-if="!journeyStarted" @click="startJourney" class="action-btn primary" :disabled="!connected || !routeInfo">
             Start Journey
           </button>
-          <button v-else @click="stopJourney" class="btn btn-danger">End Journey</button>
+          <button v-else @click="stopJourney" class="action-btn danger">
+            End Journey
+          </button>
         </div>
 
-        <!-- Live Debug Info -->
-        <div class="debug-info" v-if="driverLocation">
-          📍 Live: {{ driverLocation.lat.toFixed(5) }}, {{ driverLocation.lng.toFixed(5) }}
+        <!-- Live Position -->
+        <div class="live-position" v-if="driverLocation">
+          <span class="live-dot"></span>
+          <span class="live-text">{{ driverLocation.lat.toFixed(5) }}, {{ driverLocation.lng.toFixed(5) }}</span>
         </div>
       </div>
-    </div>
+    </aside>
   </div>
 </template>
 
@@ -130,13 +112,10 @@ import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
 /* ---------- UI State ---------- */
-const showDetails = ref(false)
-const windowWidth = ref(window.innerWidth)
-const isDesktop = computed(() => windowWidth.value >= 768)
+const sidebarOpen = ref(false)
 
-function handleResize() {
-  windowWidth.value = window.innerWidth
-  if (isDesktop.value) showDetails.value = true
+function toggleSidebar() {
+  sidebarOpen.value = !sidebarOpen.value
 }
 
 /* ---------- Map & Markers ---------- */
@@ -184,7 +163,7 @@ function mainAction() { journeyStarted.value ? stopJourney() : (routeInfo.value 
 
 function setPickerMode(mode) {
   pickerMode.value = mode
-  if (!isDesktop.value) showDetails.value = false
+  sidebarOpen.value = false
 }
 
 /* ---------- Map Interaction ---------- */
@@ -226,7 +205,6 @@ function connectSocket() {
 function requestRoute() {
   if (!socket.value) return
   socket.value.emit('calculate-route', { from: fromCoords.value, to: toCoords.value })
-  if (!isDesktop.value) showDetails.value = false
 }
 
 function startJourney() {
@@ -235,12 +213,12 @@ function startJourney() {
     driverId: driverId.value, 
     targetLat: toCoords.value.lat, 
     targetLng: toCoords.value.lng,
-    startLat: fromCoords.value.lat,      // <-- add
-    startLng: fromCoords.value.lng       // <-- add
+    startLat: fromCoords.value.lat,
+    startLng: fromCoords.value.lng
   })
   tracking.value = true
   journeyStarted.value = true
-  if (!isDesktop.value) showDetails.value = false
+  sidebarOpen.value = false
 }
 
 
@@ -278,7 +256,6 @@ watch(driverLocation, newLoc => {
 
 /* ---------- Map Setup ---------- */
 onMounted(() => {
-  window.addEventListener('resize', handleResize)
   map = new maplibregl.Map({
     container: mapContainer.value,
     style: { version: 8, sources: { osm: { type: 'raster', tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'], tileSize: 256, attribution:'© OSM', maxzoom:19 }}, layers:[{id:'osm', type:'raster', source:'osm'}] },
@@ -300,7 +277,6 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  window.removeEventListener('resize', handleResize)
   if (animationFrame) cancelAnimationFrame(animationFrame)
   if (socket.value) socket.value.disconnect()
   if (map) map.remove()
@@ -308,70 +284,126 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* Keep your existing styles here, optionally remove duplicates */
-</style>
-
-
-<style scoped>
 * {
   box-sizing: border-box;
-  -webkit-font-smoothing: antialiased;
+  margin: 0;
+  padding: 0;
 }
 
 .app-layout {
   position: fixed;
-  top: 0; left: 0;
-  width: 100vw; height: 100vh;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  inset: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow: hidden;
 }
 
 .map-wrapper {
   position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
+  inset: 0;
   z-index: 1;
 }
 
-#map { width: 100%; height: 100%; }
-
-.status-pill {
-  position: absolute;
-  top: 16px; right: 16px;
-  z-index: 10;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 8px 16px;
-  border-radius: 30px;
-  font-size: 13px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  backdrop-filter: blur(8px);
+#map {
+  width: 100%;
+  height: 100%;
 }
 
-.status-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: #ccc;
+/* Top Bar */
+.top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.top-bar > * {
+  pointer-events: auto;
+}
+
+/* Hamburger Button */
+.hamburger-btn {
+  width: 44px;
+  height: 44px;
+  background: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
 }
 
-.status-pill.connected .status-dot { 
-  background: #10b981; 
-  box-shadow: 0 0 8px #10b981;
+.hamburger-btn span {
+  width: 20px;
+  height: 2px;
+  background: #1f2937;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.hamburger-btn.active span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.hamburger-btn.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger-btn.active span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+.hamburger-btn:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Status Indicator */
+.status-indicator {
+  background: white;
+  padding: 10px 16px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.status-indicator .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  transition: all 0.3s ease;
+}
+
+.status-indicator.connected .dot {
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
   animation: pulse 2s ease-in-out infinite;
+}
+
+.status-indicator.connected {
+  color: #059669;
 }
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  50% { opacity: 0.6; }
 }
-
-.status-pill.connected { color: #064e3b; }
-.status-pill.disconnected .status-dot { background: #ef4444; }
-.status-pill.disconnected { color: #7f1d1d; }
 
 .nav-panel {
   position: absolute;
@@ -618,12 +650,23 @@ onUnmounted(() => {
   margin: 8px 0 8px 8px;
 }
 
-.picker-mode {
+/* Picker Banner */
+.picker-banner {
   position: absolute;
   top: 70px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 15;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+  font-size: 14px;
+  font-weight: 500;
   animation: slideDown 0.3s ease;
 }
 
@@ -638,29 +681,15 @@ onUnmounted(() => {
   }
 }
 
-.picker-content {
-  background: rgba(59, 130, 246, 0.95);
-  backdrop-filter: blur(10px);
-  color: white;
-  padding: 12px 20px;
-  border-radius: 30px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
-  font-size: 14px;
-  font-weight: 600;
+.picker-banner .icon {
+  font-size: 18px;
 }
 
-.picker-icon {
-  font-size: 20px;
-}
-
-.picker-text {
+.picker-banner .text {
   white-space: nowrap;
 }
 
-.picker-close {
+.picker-banner .close-btn {
   background: rgba(255, 255, 255, 0.2);
   border: none;
   color: white;
@@ -671,103 +700,305 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
-  transition: background 0.2s ease;
+  font-size: 14px;
+  transition: all 0.2s ease;
   margin-left: 4px;
 }
 
-.picker-close:hover {
+.picker-banner .close-btn:hover {
   background: rgba(255, 255, 255, 0.3);
 }
 
-.picker-close:active {
-  transform: scale(0.9);
-}
-
-@media (max-width: 767px) {
-  .picker-mode {
-    top: 60px;
+@media (max-width: 640px) {
+  .picker-banner {
     left: 16px;
     right: 16px;
     transform: none;
-  }
-  
-  .picker-content {
-    width: 100%;
-    justify-content: center;
     font-size: 13px;
-    padding: 10px 16px;
-  }
-  
-  .picker-text {
-    white-space: normal;
-    text-align: center;
-    flex: 1;
-  }
-  
-  .location-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-  }
-  
-  .btn-map-pick {
-    width: 100%;
   }
 }
 
-.stats-card {
-  display: flex;
-  background: #eff6ff;
-  padding: 16px;
-  border-radius: 12px;
-  margin-bottom: 20px;
-  justify-content: space-around;
-  align-items: center;
+/* Overlay */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 30;
+  animation: fadeIn 0.3s ease;
 }
 
-.stat-item {
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 360px;
+  max-width: 85vw;
+  background: white;
+  z-index: 40;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.stat-item .label { font-size: 11px; color: #60a5fa; margin-bottom: 4px; }
-.stat-item .value { font-size: 18px; font-weight: 700; color: #1e40af; }
-.vertical-divider { width: 1px; height: 30px; background: rgba(59, 130, 246, 0.2); }
+.sidebar.open {
+  transform: translateX(0);
+}
 
-.action-grid {
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.sidebar-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.close-sidebar {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: #f3f4f6;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #6b7280;
+  transition: all 0.2s ease;
+}
+
+.close-sidebar:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Form Elements */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #111827;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.form-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-input:disabled {
+  background: #f9fafb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.location-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pick-btn {
+  padding: 6px 12px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.pick-btn:hover:not(:disabled) {
+  background: #e5e7eb;
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.pick-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.coords-input {
   display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.coord-field {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #111827;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.coord-field:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.coord-field:disabled {
+  background: #f9fafb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Route Info */
+.route-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-radius: 12px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #60a5fa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e40af;
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  flex-direction: column;
   gap: 10px;
 }
 
-.btn {
+.action-btn {
   width: 100%;
   padding: 14px;
-  border-radius: 10px;
   border: none;
-  font-weight: 600;
+  border-radius: 10px;
   font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.btn:active { transform: scale(0.98); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.btn-primary { background: #3b82f6; color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
-.btn-secondary { background: white; border: 1px solid #e5e7eb; color: #374151; }
-.btn-danger { background: #fee2e2; color: #dc2626; }
-
-.debug-info {
-  margin-top: 20px;
-  font-size: 11px;
-  color: #9ca3af;
-  text-align: center;
-  font-family: monospace;
+.action-btn:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
-/* Smooth marker animation */
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-btn.primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.action-btn.primary:hover:not(:disabled) {
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+}
+
+.action-btn.secondary {
+  background: white;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.action-btn.secondary:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.action-btn.danger {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.action-btn.danger:hover:not(:disabled) {
+  background: #fecaca;
+}
+
+/* Live Position */
+.live-position {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+  color: #6b7280;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Driver Marker */
 .driver-marker {
   will-change: transform;
 }
