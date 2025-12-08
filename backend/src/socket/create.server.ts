@@ -27,11 +27,19 @@ class SocketServer{
 
                 logger.info(`Client successfully connected on socket id:${socket.id}`)
 
-                socket.on( eventName, async function(socketParams){
+                socket.on( eventName, async function (payload:any){
                     try{
+            
+                        await callBackFn( payload, socket )                       
+
+                    }catch(error:any){
                         
-                    }catch(error){
-                        throw error;
+                        logger.error(`SocketIo error in handling event:${eventName}`,{
+                            errorMessage:error.message,
+                            errorStack:error.stack
+                        })
+
+                        socket.emit("error", { message: "Server error" });
                     }
                 })
 
