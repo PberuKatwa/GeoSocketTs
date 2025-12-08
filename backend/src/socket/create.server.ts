@@ -1,12 +1,34 @@
 import { Server, Socket } from "socket.io";
-import { createServer } from "http";
+import { createServer, Server as HttpServer } from "http";
 import logger from "../utils/logger";
 
 class SocketServer{
     private readonly port:number;
+    private readonly io:Server;
+    private readonly httpServer:HttpServer;
 
     constructor( port:number ){
         this.port = port;
+
+        const servers = this.intializeServers();
+        this.io = servers.io
+        this.httpServer = servers.httpServer;
+
+    }
+
+    private intializeServers(){
+        try{
+
+            const httpServer = createServer()
+
+            const io = new Server( httpServer, { cors:{
+                origin:'*'
+            }})
+
+            return { httpServer, io }
+        }catch(error){
+            throw error;
+        }
     }
 
     /**
@@ -45,6 +67,16 @@ class SocketServer{
 
 
             })
+
+        }catch(error){
+            throw error;
+        }
+    }
+
+    public handleDisconnect(){
+        try{
+
+
 
         }catch(error){
             throw error;
