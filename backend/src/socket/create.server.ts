@@ -47,7 +47,7 @@ class SocketServer{
             
             this.io.on( "connection", function (socket){
 
-                logger.SocketIo(`Client successfully connected on socket id:${socket.id}`)
+                logger.SocketIo(`Client successfully connected on socket id:${socket.id} for event:${eventName}`)
 
                 socket.on( eventName, async function (payload:any){
                     try{
@@ -61,7 +61,7 @@ class SocketServer{
                             errorStack:error.stack
                         })
 
-                        socket.emit("error in handling event", { message: "Server error" });
+                        socket.emit(`error in handling event ${eventName}`, { message: "Server error" });
                     }
                 })
 
