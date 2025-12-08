@@ -30,6 +30,7 @@ class SocketServer{
             }})
 
             return { httpServer, io }
+            
         }catch(error){
             throw error;
         }
