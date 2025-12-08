@@ -14,6 +14,10 @@ class SocketServer{
         this.io = servers.io
         this.httpServer = servers.httpServer;
 
+        this.httpServer.listen(this.port, () => {
+            logger.SocketIo(`Socket.IO server running on port ${this.port}`);
+        });
+
     }
 
     private intializeServers(){
