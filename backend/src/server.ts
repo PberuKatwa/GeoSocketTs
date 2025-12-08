@@ -1,6 +1,6 @@
-import "./socket";
+import socketServer from "./socket/index.js";
 import SocketService from "./services/socket.service22.js";
-import logger from "./utils/logger";
+import logger from "./utils/logger.js";
 
 // import { createSocketIOServer } from "./services/socket.service.js";
 // import socketServer from "./socket/index.js";

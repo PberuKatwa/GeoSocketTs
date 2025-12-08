@@ -1,4 +1,4 @@
-import SocketServer from "./create.server"
+import SocketServer from "./create.server.js"
 
 const socketServer = new SocketServer(4000)
 

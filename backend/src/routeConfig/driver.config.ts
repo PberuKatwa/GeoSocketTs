@@ -1,6 +1,6 @@
 import { Driver } from "../types/geo.types";
-import Route from "./route.config";
-import logger from "../utils/logger";
+import Route from "./route.config.js";
+import logger from "../utils/logger.js";
 
 class DriverConfig{
 

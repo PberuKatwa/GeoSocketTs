@@ -1,7 +1,7 @@
-import socketServer from "../socket";
-import Route from "../routeConfig/route.config";
-import DriverConfig from "../routeConfig/driver.config";
-import logger from "../utils/logger";
+import socketServer from "../socket/index.js";
+import Route from "../routeConfig/route.config.js";
+import DriverConfig from "../routeConfig/driver.config.js";
+import logger from "../utils/logger.js";
 
 class SocketService{
 
@@ -73,7 +73,7 @@ class SocketService{
         this.drivers.set(driverId, driver);
       }
 
-      await driver.startSimulation(targetLat, targetLng, osrmUrl);
+      await driver.startSimulation( targetLat, targetLng, "http://localhost:5000" );
 
       const emitInterval = setInterval(() => {
 

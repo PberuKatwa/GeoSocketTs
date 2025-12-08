@@ -8,7 +8,7 @@ const customLevels = {
     info: 2,
     httpreq: 3,
     debug: 4,
-    SOCKETIO: 5,   // Custom level for socket events
+    SocketIo: 5,   // Custom level for socket events
   },
   colors: {
     error: "red",
@@ -16,7 +16,7 @@ const customLevels = {
     info: "green",
     httpreq: "magenta",
     debug: "blue",
-    SOCKETIO: "cyan", // Color for socket events
+    SocketIo: "cyan", // Color for socket events
   },
 };
 
@@ -26,7 +26,7 @@ winston.addColors(customLevels.colors);
 // 3 Logger options
 const loggerOptions: LoggerOptions = {
   levels: customLevels.levels,
-  level: "SOCKETIO", // minimum level to log
+  level: "SocketIo", // minimum level to log
   format: winston.format.combine(
     winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
     winston.format.colorize({ all: true }),
@@ -54,7 +54,7 @@ const loggerOptions: LoggerOptions = {
     }),
     new winston.transports.File({
       filename: "socketio.log",
-      level: "SOCKETIO", // Only logs SOCKETIO messages
+      level: "SocketIo", // Only logs SOCKETIO messages
       format: winston.format.combine(
         winston.format.timestamp(),
         winston.format.json()
