@@ -1,6 +1,5 @@
 import { Driver } from "../types/geo.types";
-import Route from "./route";
-import socketServer from "../socket";
+import Route from "./route.config";
 import logger from "../utils/logger";
 
 class DriverConfig{
@@ -23,6 +22,7 @@ class DriverConfig{
     private async moveDriver(){
         try{
 
+            if (!this.interval) return;
             if (!this.path || this.currentIndex >= this.path.length) {
                 logger.info(`Driver ${this.driverId} reached destination.`);
                 clearInterval(this.interval);
@@ -49,7 +49,7 @@ class DriverConfig{
                 
             const tripRoute = new Route(
                 [ this.longitude, this.latitude  ],
-                [ targetLongitude, targetLongitude ],
+                [ targetLongitude, targetLatitude ],
                 osrmUrl
             )
 
@@ -62,6 +62,18 @@ class DriverConfig{
             this.interval = setInterval( () => this.moveDriver() , 1000 )
                 
         }catch(error){
+            throw error;
+        }
+    }
+
+    public stopSimulation() {
+        try {
+            if (this.interval) {
+                clearInterval(this.interval);
+                this.interval = undefined;
+                logger.info(`Driver ${this.driverId} simulation stopped.`);
+            }
+        } catch (error) {
             throw error;
         }
     }
