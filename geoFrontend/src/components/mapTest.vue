@@ -11,6 +11,8 @@ const mapContainer = ref(null);
 
 function initializeMap() {
   try {
+    const centerCoords = [36.817223, -1.286389];
+
     const map = new maplibregl.Map({
       container: mapContainer.value,
       style: {
@@ -34,6 +36,10 @@ function initializeMap() {
 
     map.addControl(new maplibregl.NavigationControl());
     map.resize(); // ensure correct centering
+
+    new maplibregl.Marker()
+      .setLngLat(centerCoords)
+      .addTo(map);
   } catch (error) {
     console.error('Error initializing map', error);
   }
