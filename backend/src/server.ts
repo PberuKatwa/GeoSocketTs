@@ -1,10 +1,6 @@
 import socketServer from "./socket/index.js";
-import SocketService from "./services/socket.service22.js";
+import SocketService from "./services/socket.service.js";
 import logger from "./utils/logger.js";
-
-// import { createSocketIOServer } from "./services/socket.service.js";
-// import socketServer from "./socket/index.js";
-// createSocketIOServer(4000)
 
 async function bootsrapServer():Promise<void>{
 

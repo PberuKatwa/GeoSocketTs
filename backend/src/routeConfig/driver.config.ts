@@ -23,6 +23,7 @@ class DriverConfig{
         try{
 
             if (!this.interval) return;
+
             if (!this.path || this.currentIndex >= this.path.length) {
                 logger.info(`Driver ${this.driverId} reached destination.`);
                 clearInterval(this.interval);
@@ -56,6 +57,9 @@ class DriverConfig{
             const { path } = await tripRoute.computeRoute() 
 
             if (!path || path.length === 0) throw new Error("OSRM did not return a valid route");
+
+            this.path = path;
+            this.currentIndex = 0;
 
             logger.info(`Starting driver simulation at latitude:${this.latitude} and longitude:${this.longitude}`)
 

@@ -1,103 +1,119 @@
-import { Server } from "socket.io";
-import { createServer } from "http";
-import { 
-  computeRoute, 
-  startDriverSimulation, 
-  stopDriverSimulation, 
-  drivers 
-} from "./deliveryService.js";
+import socketServer from "../socket/index.js";
+import Route from "../routeConfig/route.config.js";
+import DriverConfig from "../routeConfig/driver.config.js";
+import logger from "../utils/logger.js";
 
-export function createSocketIOServer(port: number) {
-  const httpServer = createServer();
+class SocketService{
 
-  const io = new Server(httpServer, {
-    cors: {
-      origin: "*",
-      methods: ["GET", "POST"]
-    }
-  });
+  private drivers: Map<string, DriverConfig> = new Map();
 
-  console.log(`Socket.IO Server running at http://localhost:${port}`);
+  public async calculateRoute(): Promise<void> {
+    try{
 
-  // -----------------------------------------------------
-  // CONNECTION
-  // -----------------------------------------------------
-  io.on("connection", (socket) => {
-    console.log(`Client connected: ${socket.id}`);
+      socketServer.registerEvent( "calculate-route", async function( data, socket ) {
 
-    // -----------------------------------------------------
-    // CALCULATE ROUTE USING OSRM
-    // -----------------------------------------------------
-    socket.on("calculate-route", async ({ from, to }) => {
-      try {
-        const result = await computeRoute(
+        const { from, to } = data;
+
+        const tripRoute = new Route( 
           [from.lng, from.lat],
-          [to.lng, to.lat]
-        );
+          [to.lng, to.lat] ,
+          "http://localhost:5000"
+        )
+
+        const result = await tripRoute.computeRoute()
 
         socket.emit("route-calculated", {
+
           distanceKm: result.distanceKm,
           etaMinutes: result.etaMinutes,
-          // Return OSRM polyline as GeoJSON-style LineString
           route: {
             type: "LineString",
-            coordinates: result.path  // path is already [lng,lat][]
+            coordinates: result.path  
           }
-        });
-      } catch (error) {
-        console.error("Route calculation error:", error);
-        socket.emit("error", { message: "Failed to calculate route" });
-      }
-    });
 
-    // -----------------------------------------------------
-    // DRIVER TRACKING (REAL ROAD MOVEMENT)
-    // -----------------------------------------------------
-    socket.on("start-tracking", async ({ driverId, targetLat, targetLng, startLat, startLng }) => {
-      console.log(`Starting tracking for ${driverId} from (${startLat}, ${startLng}) to (${targetLat}, ${targetLng})`);
+        });
+
+      })
+
+    }catch(error){
+      throw error
+    }
+
+  }
+
+  // public async startTracking(){
+  //   try{
+
+  //     socketServer.registerEvent( "start-tracking", async function( data, socket ){
+
+  //       const { driverId, targetLat, targetLng, startLat, startLng } = data;
+  //       logger.info(`Starting tracking for ${driverId} from (${startLat}, ${startLng}) to (${targetLat}, ${targetLng})`)
+
+  //       const driver = new DriverConfig( "driver-001", startLat, startLng )
+
+  //     })
+
+  //   }catch(error){
+  //     throw error;
+  //   }
+  // }
+
+  public async startTracking(): Promise<void> {
+    socketServer.registerEvent("start-tracking", async (payload, socket) => {
+
+      const { driverId, startLat, startLng, targetLat, targetLng, osrmUrl } = payload;
+
+      logger.info(`Starting tracking for driver ${driverId}`);
 
       socket.join(`driver-${driverId}`);
+      let driver = this.drivers.get(driverId);
 
-      // Start simulation → fetch OSRM route
-      await startDriverSimulation(driverId, targetLat, targetLng, startLat, startLng);
+      if (!driver) {
+        driver = new DriverConfig(driverId, startLat, startLng);
+        this.drivers.set(driverId, driver);
+      }
 
-      // Emit driver position every second
-      const interval = setInterval(() => {
-        const driver = drivers.get(driverId);
-        if (!driver) {
-          clearInterval(interval);
+      await driver.startSimulation( targetLat, targetLng, "http://localhost:5000" );
+
+      const emitInterval = setInterval(() => {
+
+        const activeDriver = this.drivers.get(driverId);
+
+        if (!activeDriver) {
+          clearInterval(emitInterval);
           return;
         }
 
-        io.to(`driver-${driverId}`).emit("driver-location", {
+        socketServer.io.to(`driver-${driverId}`).emit("driver-location", {
           driverId,
-          latitude: driver.lat,
-          longitude: driver.lng
+          latitude: activeDriver.latitude,
+          longitude: activeDriver.longitude
         });
+
       }, 1000);
 
-      // When this socket disconnects
       socket.on("disconnect", () => {
-        clearInterval(interval);
+        logger.info(`Client disconnected, stopping driver ${driverId}`);
+
+        clearInterval(emitInterval);
+        driver?.stopSimulation();
         socket.leave(`driver-${driverId}`);
+
       });
 
-      // Stop tracking manually
       socket.on("stop-tracking", () => {
-        clearInterval(interval);
-        stopDriverSimulation(driverId);
+
+        logger.info(`Manual stop triggered for driver ${driverId}`);
+
+        clearInterval(emitInterval);
+        driver?.stopSimulation();
         socket.leave(`driver-${driverId}`);
+        
       });
-      
-    });
 
-    // -----------------------------------------------------
-    // HANDLE DISCONNECT
-    // -----------------------------------------------------
-    socket.on("disconnect", () => {
-      console.log(`Client disconnected: ${socket.id}`);
     });
-  });
+  }
 
-  httpServer.listen(port);
 }
+
+export default SocketService;
