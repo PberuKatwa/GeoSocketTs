@@ -1,7 +1,11 @@
 import socketServer from "../socket";
 import Route from "../routeConfig/route.config";
+import DriverConfig from "../routeConfig/driver.config";
+import logger from "../utils/logger";
 
 class SocketService{
+
+  private drivers: Map<string, DriverConfig> = new Map();
 
   public async calculateRoute(): Promise<void> {
     try{
@@ -37,18 +41,76 @@ class SocketService{
 
   }
 
-  public async startTracking(){
-    try{
+  // public async startTracking(){
+  //   try{
 
-      socketServer.registerEvent( "start-tracking", async function( data, socket ){
+  //     socketServer.registerEvent( "start-tracking", async function( data, socket ){
 
-        const { driverId, targetLat, targetLng, startLat, startLng } = data;
+  //       const { driverId, targetLat, targetLng, startLat, startLng } = data;
+  //       logger.info(`Starting tracking for ${driverId} from (${startLat}, ${startLng}) to (${targetLat}, ${targetLng})`)
+
+  //       const driver = new DriverConfig( "driver-001", startLat, startLng )
+
+  //     })
+
+  //   }catch(error){
+  //     throw error;
+  //   }
+  // }
+
+  public async startTracking(): Promise<void> {
+    socketServer.registerEvent("start-tracking", async (payload, socket) => {
+
+      const { driverId, startLat, startLng, targetLat, targetLng, osrmUrl } = payload;
+
+      logger.info(`Starting tracking for driver ${driverId}`);
+
+      socket.join(`driver-${driverId}`);
+      let driver = this.drivers.get(driverId);
+
+      if (!driver) {
+        driver = new DriverConfig(driverId, startLat, startLng);
+        this.drivers.set(driverId, driver);
+      }
+
+      await driver.startSimulation(targetLat, targetLng, osrmUrl);
+
+      const emitInterval = setInterval(() => {
+
+        const activeDriver = this.drivers.get(driverId);
+
+        if (!activeDriver) {
+          clearInterval(emitInterval);
+          return;
+        }
+
+        socketServer.io.to(`driver-${driverId}`).emit("driver-location", {
+          driverId,
+          latitude: activeDriver.latitude,
+          longitude: activeDriver.longitude
+        });
         
-      })
+      }, 1000);
 
-    }catch(error){
-      throw error;
-    }
+      // stop when this user disconnects
+      socket.on("disconnect", () => {
+        logger.info(`Client disconnected, stopping driver ${driverId}`);
+
+        clearInterval(emitInterval);
+        driver?.stopSimulation();
+        socket.leave(`driver-${driverId}`);
+      });
+
+      // manual stop event
+      socket.on("stop-tracking", () => {
+        logger.info(`Manual stop triggered for driver ${driverId}`);
+
+        clearInterval(emitInterval);
+        driver?.stopSimulation();
+        socket.leave(`driver-${driverId}`);
+      });
+
+    });
   }
 
 }

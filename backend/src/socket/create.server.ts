@@ -4,7 +4,7 @@ import logger from "../utils/logger";
 
 class SocketServer{
     private readonly port:number;
-    private readonly io:Server;
+    io:Server;
     private readonly httpServer:HttpServer;
 
     constructor( port:number ){

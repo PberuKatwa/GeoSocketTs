@@ -6,8 +6,8 @@ class DriverConfig{
 
     // private readonly driver:Driver;
     private readonly driverId:string;
-    private latitude:number;
-    private longitude:number;
+    latitude:number;
+    longitude:number;
 
     private path: [number, number][] | null = null;
     private currentIndex: number = 0;

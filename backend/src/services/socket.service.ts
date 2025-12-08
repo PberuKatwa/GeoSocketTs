@@ -88,6 +88,7 @@ export function createSocketIOServer(port: number) {
         stopDriverSimulation(driverId);
         socket.leave(`driver-${driverId}`);
       });
+      
     });
 
     // -----------------------------------------------------
