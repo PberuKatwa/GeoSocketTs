@@ -89,25 +89,26 @@ class SocketService{
           latitude: activeDriver.latitude,
           longitude: activeDriver.longitude
         });
-        
+
       }, 1000);
 
-      // stop when this user disconnects
       socket.on("disconnect", () => {
         logger.info(`Client disconnected, stopping driver ${driverId}`);
 
         clearInterval(emitInterval);
         driver?.stopSimulation();
         socket.leave(`driver-${driverId}`);
+
       });
 
-      // manual stop event
       socket.on("stop-tracking", () => {
+
         logger.info(`Manual stop triggered for driver ${driverId}`);
 
         clearInterval(emitInterval);
         driver?.stopSimulation();
         socket.leave(`driver-${driverId}`);
+        
       });
 
     });
