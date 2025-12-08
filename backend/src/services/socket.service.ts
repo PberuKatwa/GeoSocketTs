@@ -41,23 +41,6 @@ class SocketService{
 
   }
 
-  // public async startTracking(){
-  //   try{
-
-  //     socketServer.registerEvent( "start-tracking", async function( data, socket ){
-
-  //       const { driverId, targetLat, targetLng, startLat, startLng } = data;
-  //       logger.info(`Starting tracking for ${driverId} from (${startLat}, ${startLng}) to (${targetLat}, ${targetLng})`)
-
-  //       const driver = new DriverConfig( "driver-001", startLat, startLng )
-
-  //     })
-
-  //   }catch(error){
-  //     throw error;
-  //   }
-  // }
-
   public async startTracking(): Promise<void> {
     socketServer.registerEvent("start-tracking", async (payload, socket) => {
 
@@ -93,8 +76,8 @@ class SocketService{
       }, 1000);
 
       socket.on("disconnect", () => {
+        
         logger.info(`Client disconnected, stopping driver ${driverId}`);
-
         clearInterval(emitInterval);
         driver?.stopSimulation();
         socket.leave(`driver-${driverId}`);
@@ -104,7 +87,6 @@ class SocketService{
       socket.on("stop-tracking", () => {
 
         logger.info(`Manual stop triggered for driver ${driverId}`);
-
         clearInterval(emitInterval);
         driver?.stopSimulation();
         socket.leave(`driver-${driverId}`);
