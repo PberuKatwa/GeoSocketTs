@@ -42,8 +42,8 @@ class SocketServer{
             
             this.io.on( "connection", function (socket){
 
-                logger.log("SOCKETIO", `Client connected: ${socket.id}`);
-                
+                logger.SocketIo(`Client successfully connected on socket id:${socket.id}`)
+
                 socket.on( eventName, async function (payload:any){
                     try{
             
@@ -74,8 +74,7 @@ class SocketServer{
             this.io.on( "disconnect", function(socket) {
                 try{
 
-                    logger.SOCKETIO(`Clent disconnected from server ${socket.id}`)
-                    logger.log("")
+                    logger.SocketIo(`Clent disconnected from server ${socket.id}`)
 
                 }catch(error:any){
 

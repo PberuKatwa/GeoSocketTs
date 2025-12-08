@@ -65,15 +65,15 @@ const loggerOptions: LoggerOptions = {
 
 // 4 Extend WinstonLogger type to include SOCKETIO method
 interface LoggerWithSocketIO extends WinstonLogger {
-  SOCKETIO: (message: string, meta?: any) => void;
+  SocketIo: (message: string, meta?: any) => void;
 }
 
 // 5 Create the logger and cast to LoggerWithSocketIO
 const logger: LoggerWithSocketIO = winston.createLogger(loggerOptions) as any;
 
 // 6 Add SOCKETIO method dynamically
-logger.SOCKETIO = (message: string, meta?: any) => {
-  logger.log("SOCKETIO", message, meta);
+logger.SocketIo = (message: string, meta?: any) => {
+  logger.log("SocketIo", message, meta);
 };
 
 export default logger;
