@@ -36,16 +36,11 @@ class SocketServer{
      * @param eventName Name of the socket event
      * @param callbackFn Function to handle the event (receives payload + socket)
     */
-    public startIoSever( eventName:string, callBackFn:( data:any, socket:Socket ) => Promise<void> ){
+    public registerEvent( eventName:string, callBackFn:( data:any, socket:Socket ) => Promise<void> ){
         try{
 
-            const httpServer = createServer()
-
-            const io = new Server( httpServer, { cors:{
-                origin:'*'
-            }})
-
-            io.on("connection", function (socket){
+            
+            this.io.on( "connection", function (socket){
 
                 logger.info(`Client successfully connected on socket id:${socket.id}`)
 
@@ -56,12 +51,12 @@ class SocketServer{
 
                     }catch(error:any){
                         
-                        logger.error(`SocketIo error in handling event:${eventName}`,{
+                        logger.error(`SocketIo error in registering event:${eventName}`,{
                             errorMessage:error.message,
                             errorStack:error.stack
                         })
 
-                        socket.emit("error", { message: "Server error" });
+                        socket.emit("error in handling event", { message: "Server error" });
                     }
                 })
 
@@ -76,7 +71,22 @@ class SocketServer{
     public handleDisconnect(){
         try{
 
+            this.io.on( "disconnect", function(socket) {
+                try{
 
+                    logger.info(`Clent disconnected from server ${socket.id}`)
+
+                }catch(error:any){
+
+                    logger.error(`Socket Io Error in disconnecting server`,{
+                        errorMessage:error.message,
+                        errorStack:error.stack
+                    })
+
+                    socket.emit("error in disconneting error", { message: "Server error" });
+
+                }
+            })
 
         }catch(error){
             throw error;
