@@ -7,8 +7,12 @@ class DriverConfig{
 
     // private readonly driver:Driver;
     private readonly driverId:string;
-    private readonly latitude:number;
-    private readonly longitude:number;
+    private latitude:number;
+    private longitude:number;
+
+    private path: [number, number][] | null = null;
+    private currentIndex: number = 0;
+    private interval?: NodeJS.Timeout;
 
     constructor( driverId:string, latitude:number, longitude:number ){
         this.driverId = driverId;
@@ -18,6 +22,18 @@ class DriverConfig{
 
     private async moveDriver(){
         try{
+
+            if (!this.path || this.currentIndex >= this.path.length) {
+                logger.info(`Driver ${this.driverId} reached destination.`);
+                clearInterval(this.interval);
+                return;
+            }
+
+            const [ nextLongitude, nextLatitude ] = this.path[this.currentIndex];
+
+            this.longitude = nextLongitude;
+            this.latitude = nextLatitude;
+            this.currentIndex ++;
 
         }catch(error){
             throw error;
@@ -39,6 +55,8 @@ class DriverConfig{
 
             const { path } = await tripRoute.computeRoute() 
 
+            if (!path || path.length === 0) throw new Error("OSRM did not return a valid route");
+                
 
 
         }catch(error){
