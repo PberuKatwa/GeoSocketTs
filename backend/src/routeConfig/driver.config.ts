@@ -56,9 +56,11 @@ class DriverConfig{
             const { path } = await tripRoute.computeRoute() 
 
             if (!path || path.length === 0) throw new Error("OSRM did not return a valid route");
+
+            logger.info(`Starting driver simulation at latitude:${this.latitude} and longitude:${this.longitude}`)
+
+            this.interval = setInterval( () => this.moveDriver() , 1000 )
                 
-
-
         }catch(error){
             throw error;
         }
