@@ -16,16 +16,30 @@ class DriverConfig{
         this.longitude = longitude;
     }
 
+    private async moveDriver(){
+        try{
+
+        }catch(error){
+            throw error;
+        }
+    }
+
     public async startSimulation( targetLatitude:number, targetLongitude:number, osrmUrl:string ){
         try{
 
+            if(!targetLatitude) throw new Error(`No target latitude was provided`);
+            if(!targetLongitude) throw new Error(`No target longitude was provided`);
+            if(!osrmUrl) throw new Error(`No osm url was provided.`);
+                
             const tripRoute = new Route(
                 [ this.longitude, this.latitude  ],
                 [ targetLongitude, targetLongitude ],
                 osrmUrl
             )
 
-            
+            const { path } = await tripRoute.computeRoute() 
+
+
 
         }catch(error){
             throw error;
