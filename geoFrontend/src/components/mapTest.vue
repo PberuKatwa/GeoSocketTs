@@ -1,6 +1,7 @@
 <template>
 
   <button @click="addCenterMarker" > Add Center Marker </button>
+  <button @click="addTargetMarker" > Add Target Marker </button>
 
   <div ref="mapContainer" class="map-container"></div>
 
@@ -17,8 +18,8 @@ const map = ref(null)
 const centerCordinates = [36.817223, -1.286389];
 const targetCordinates = [36.827223, -1.296389];
 
-const centerMarker = ref< [Number,Number] >(null);
-const targetMarker = ref< [Number,Number] >(null);
+const centerMarker = ref(null);
+const targetMarker = ref(null);
 
 function initializeMap() {
   try {
@@ -41,18 +42,45 @@ function initializeMap() {
           { id: 'osm', type: 'raster', source: 'osm' }
         ]
       },
-      center: [36.817223, -1.286389], // Nairobi: lng, lat
+      center: centerCordinates, 
       zoom: 12
     });
 
     map.value.addControl(new maplibregl.NavigationControl());
     map.value.resize(); // ensure correct centering
 
-    new maplibregl.Marker()
-      .setLngLat(centerCoords)
-      .addTo(map.value);
+    // new maplibregl.Marker()
+    //   .setLngLat(centerCoords)
+    //   .addTo(map.value);
+
   } catch (error) {
     console.error('Error initializing map', error);
+  }
+}
+
+function addCenterMarker(){
+  try{
+
+    if(!map.value) return console.error(`Map was not loaded`)
+    if(centerMarker.value) centerMarker.value.remove();
+
+    centerMarker.value = new maplibregl.Marker( { color:"green" } ).setLngLat(centerCordinates).addTo(map.value)
+
+  }catch(error){
+    console.error(`Error in adding center marker`,error)
+  }
+}
+
+function addTargetMarker(){
+  try{
+
+    if(!map.value) return console.error(`Map was not loaded`)
+    if(targetMarker.value) targetMarker.value.remove();
+
+    targetMarker.value = new maplibregl.Marker( { color:"yellow" } ).setLngLat(targetCordinates).addTo(map.value)
+    
+  }catch(error){
+    console.error(`Error in adding center marker`,error)
   }
 }
 
