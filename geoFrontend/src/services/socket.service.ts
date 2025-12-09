@@ -23,7 +23,7 @@ class SocketService{
 
             this.socket.on( 'connect', ()=> { this.isConnected = true })
             return this.isConnected;
-            
+
         }catch(error){
             throw error;
         }
@@ -81,48 +81,35 @@ class SocketService{
         try{
 
             this.socket.emit( 'calculate-route', { from,to })
-            this.isTracking = true;
-            this.hasJourneyStarted = true;
-                         
+                      
         }catch(error){
             throw error;
         }
     }
 
-    public startSimulation(driverId:string, targetLat:number, targetLng:number , startLat:number, startLng:number){
+    public startSimulation(driverId:string, targetLat:number, targetLng:number , startLat:number, startLng:number):void{
         try{
 
             this.socket.emit( 'start-tracking', { driverId, targetLat, targetLng , startLat, startLng })
-                          
+            this.isTracking = true;
+            this.hasJourneyStarted = true;   
+
         }catch(error){
             throw error;
         }
     }
 
-//     function startJourney() {
-//   if (!socket.value) return
-//   socket.value.emit('start-tracking', { 
-//     driverId: driverId.value, 
-//     targetLat: toCoords.value.lat, 
-//     targetLng: toCoords.value.lng,
-//     startLat: fromCoords.value.lat,
-//     startLng: fromCoords.value.lng
-//   })
-//   tracking.value = true
-//   journeyStarted.value = true
-//   sidebarOpen.value = false
-// }
+    public stopSimulation():void{
+        try{
 
-
-// function stopJourney() {
-//   if (!socket.value) return
-//   socket.value.emit('stop-tracking')
-//   tracking.value = false
-//   journeyStarted.value = false
-//   driverLocation.value = null
-//   if (animationFrame) cancelAnimationFrame(animationFrame)
-//   if (driverMarker) { driverMarker.remove(); driverMarker = null }
-// }
+            this.socket.emit( 'stop-tracking')
+            this.isTracking = false;
+            this.hasJourneyStarted = false;   
+                      
+        }catch(error){
+            throw error;
+        }
+    }
 
 }
 
