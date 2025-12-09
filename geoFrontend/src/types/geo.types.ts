@@ -3,7 +3,7 @@ export interface DriverCordinates {
     latitude:number;
 }
 
-export interface routeResponse {
+export interface RouteResponse {
     distanceKm: number;
     etaMinutes: number,
     route: {

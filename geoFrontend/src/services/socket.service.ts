@@ -1,40 +1,46 @@
 import { io } from "socket.io-client";
-import type { DriverCordinates, routeResponse } from "@/types/geo.types";
+import type { DriverCordinates, RouteResponse } from "@/types/geo.types";
 
 class SocketService{
     private readonly url:string;
     private readonly socket;
     public isConnected:boolean;
-    public routeResponse!:routeResponse;
+    public routeResponse!:RouteResponse;
     public driverLocation!:DriverCordinates;
+    public isTracking:boolean;
+    public hasJourneyStarted:boolean;
 
     constructor(url:string){
         this.url = url;
         this.isConnected = false;
-        this.socket = io(url)
+        this.socket = io(url);
+        this.isTracking = false;
+        this.hasJourneyStarted = false;
     }
 
-    private connectIoServer(){
+    private connectIoServer():boolean{
         try{
 
             this.socket.on( 'connect', ()=> { this.isConnected = true })
-                
+            return this.isConnected;
+            
         }catch(error){
             throw error;
         }
     }
 
-    private disconnectIoServer(){
+    private disconnectIoServer():boolean{
         try{
 
             this.socket.on( 'disconnect', ()=> { this.isConnected = false; })
-                           
+            return this.isConnected;
+
         }catch(error){
             throw error;
         }
     }
 
-    public getRoute(){
+    public getRoute():RouteResponse{
         try{
 
             this.socket.on( 'route-calculated', data => {
@@ -54,7 +60,7 @@ class SocketService{
         }
     }
 
-    public getDriverLocation(){
+    public getDriverLocation():DriverCordinates{
         try{
 
             this.socket.on( 'driver-location', data => {
@@ -75,6 +81,8 @@ class SocketService{
         try{
 
             this.socket.emit( 'calculate-route', { from,to })
+            this.isTracking = true;
+            this.hasJourneyStarted = true;
                          
         }catch(error){
             throw error;
