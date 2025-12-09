@@ -10,6 +10,9 @@ export const useSocketClientStore = defineStore( "socketClient", function(){
     const isConnected = ref(false);
     const routeResponse= ref< RouteResponse| null >(null);
     const driverCordinates = ref< DriverCordinates | null >(null);
+    const isTracking = ref<boolean>(false)
+    const hasJourneyStarted = ref<boolean>(false)
+
 
     function connectSocket(){
         try{
@@ -53,7 +56,12 @@ export const useSocketClientStore = defineStore( "socketClient", function(){
 
     function startSimulation( driverId:string, targetLat:number, targetLng:number , startLat:number, startLng:number ){
         try{
-            socketService.startSimulation(driverId, targetLat, targetLng, startLat, startLng)
+            const{ isTracking:tracking, hasJourneyStarted:started } = socketService.startSimulation(driverId, targetLat, targetLng, startLat, startLng)
+
+            isTracking.value = tracking;
+            hasJourneyStarted.value = started;
+
+            return { isTracking, hasJourneyStarted }
         }catch(error){
             console.error(`Error in getting driver location`, error)
         }
@@ -61,17 +69,32 @@ export const useSocketClientStore = defineStore( "socketClient", function(){
 
     function stopSimulation(){
         try{
-            socketService.stopSimulation()
+            const{ isTracking:tracking, hasJourneyStarted:started } = socketService.stopSimulation()
+
+            isTracking.value = tracking;
+            hasJourneyStarted.value = started;
+
+            return { isTracking, hasJourneyStarted }
         }catch(error){
             console.error(`Error in getting driver location`, error)
         }
     }
 
     return {
+        // State
         isConnected,
+        isTracking,
+        hasJourneyStarted,
+        routeResponse,
+        driverCordinates,
 
-
-        connectSocket
+        // 
+        connectSocket,
+        disconnectSocket,
+        getRoute,
+        requestRoute,
+        getDriverLocation,
+        startSimulation,stopSimulation
     }
 
 })
