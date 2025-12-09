@@ -89,7 +89,8 @@ class SocketService{
 
     public startSimulation(driverId:string, targetLat:number, targetLng:number , startLat:number, startLng:number): {
         isTracking:boolean ,hasJourneyStarted:boolean
-    } {
+    } 
+    {
         try{
 
             this.socket.emit( 'start-tracking', { driverId, targetLat, targetLng , startLat, startLng })
@@ -97,18 +98,23 @@ class SocketService{
             this.hasJourneyStarted = true;   
 
             return { isTracking:this.isTracking, hasJourneyStarted:this.hasJourneyStarted }
-            
+
         }catch(error){
             throw error;
         }
     }
 
-    public stopSimulation():void{
+    public stopSimulation(): {
+        isTracking:boolean ,hasJourneyStarted:boolean
+    } 
+    {
         try{
 
             this.socket.emit( 'stop-tracking')
             this.isTracking = false;
-            this.hasJourneyStarted = false;   
+            this.hasJourneyStarted = false;  
+            
+            return { isTracking:this.isTracking, hasJourneyStarted:this.hasJourneyStarted }
                       
         }catch(error){
             throw error;
