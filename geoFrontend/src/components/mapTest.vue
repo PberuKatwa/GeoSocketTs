@@ -2,6 +2,7 @@
 
   <button @click="addCenterMarker" > Add Center Marker </button>
   <button @click="addTargetMarker" > Add Target Marker </button>
+  <button @click="drawRoute" > draw route </button>
 
   <div ref="mapContainer" class="map-container"></div>
 
@@ -16,6 +17,16 @@ const mapContainer = ref(null);
 const map = ref(null)
 
 const centerCordinates = [36.817223, -1.286389];
+const routeCoordinates = [
+  [36.817223, -1.286389], 
+  [36.821945, -1.292066], 
+  [36.825500, -1.295100], 
+  [36.829000, -1.310300], 
+  [36.829100, -1.320300],
+  [36.829200, -1.330300],
+  [36.829300, -1.340300],
+];
+
 const centerMarker = ref(null);
 const targetMarker = ref(null);
 
@@ -46,7 +57,12 @@ function initializeMap() {
     });
 
     map.value.addControl(new maplibregl.NavigationControl());
-    map.value.resize(); 
+    map.value.resize(); // ensure correct centering
+
+    new maplibregl.Marker()
+      .setLngLat(centerCordinates)
+      .addTo(map.value);
+
 
     map.value.on( "click", function(event) {
 
@@ -100,6 +116,43 @@ function placeTargetMarker(cordinates){
     
   }catch(error){
     console.error(`Error in adding center marker`,error)
+  }
+}
+
+function drawRoute(){
+  try{
+
+    if(!map.value) return console.error(`Map was not initialized`);
+
+    if ( map.value.getSource("route") ){
+      map.value.removeLayer("route-layer");
+      map.value.removeSource("route");
+    }
+
+    map.value.addSource("route", {
+      type: "geojson",
+      data: {
+        type: "Feature",
+        geometry: {
+          type: "LineString",
+          coordinates: routeCoordinates,
+        },
+      },
+    });
+
+    map.value.addLayer({
+      id: "route-layer",
+      type: "line",
+      source: "route",
+      paint: {
+        "line-color": "#ff0000",
+        "line-width": 4,
+      },
+    });
+
+
+  }catch(error){
+    console.error(`Error in drawing route`,error)
   }
 }
 
