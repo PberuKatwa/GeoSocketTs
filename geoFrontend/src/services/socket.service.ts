@@ -87,13 +87,17 @@ class SocketService{
         }
     }
 
-    public startSimulation(driverId:string, targetLat:number, targetLng:number , startLat:number, startLng:number):void{
+    public startSimulation(driverId:string, targetLat:number, targetLng:number , startLat:number, startLng:number): {
+        isTracking:boolean ,hasJourneyStarted:boolean
+    } {
         try{
 
             this.socket.emit( 'start-tracking', { driverId, targetLat, targetLng , startLat, startLng })
             this.isTracking = true;
             this.hasJourneyStarted = true;   
 
+            return { isTracking:this.isTracking, hasJourneyStarted:this.hasJourneyStarted }
+            
         }catch(error){
             throw error;
         }
