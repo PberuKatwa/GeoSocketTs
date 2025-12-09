@@ -18,7 +18,7 @@ class SocketService{
         this.hasJourneyStarted = false;
     }
 
-    private connectIoServer():boolean{
+    public connectIoServer():boolean{
         try{
 
             this.socket.on( 'connect', ()=> { this.isConnected = true })
@@ -29,7 +29,7 @@ class SocketService{
         }
     }
 
-    private disconnectIoServer():boolean{
+    public disconnectIoServer():boolean{
         try{
 
             this.socket.on( 'disconnect', ()=> { this.isConnected = false; })
