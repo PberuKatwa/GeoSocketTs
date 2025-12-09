@@ -16,8 +16,6 @@ const mapContainer = ref(null);
 const map = ref(null)
 
 const centerCordinates = [36.817223, -1.286389];
-const targetCordinates = [36.827223, -1.296389];
-
 const centerMarker = ref(null);
 const targetMarker = ref(null);
 
@@ -25,7 +23,6 @@ const activeMode = ref(null)
 
 function initializeMap() {
   try {
-    const centerCoords = [36.817223, -1.286389];
 
     map.value = new maplibregl.Map({
       container: mapContainer.value,
@@ -49,11 +46,7 @@ function initializeMap() {
     });
 
     map.value.addControl(new maplibregl.NavigationControl());
-    map.value.resize(); // ensure correct centering
-
-    // new maplibregl.Marker()
-    //   .setLngLat(centerCoords)
-    //   .addTo(map.value);
+    map.value.resize(); 
 
     map.value.on( "click", function(event) {
 
