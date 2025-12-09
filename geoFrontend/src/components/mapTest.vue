@@ -1,5 +1,9 @@
 <template>
+
+  <button @click="addCenterMarker" > Add Center Marker </button>
+
   <div ref="mapContainer" class="map-container"></div>
+
 </template>
 
 <script setup>
@@ -8,12 +12,19 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 const mapContainer = ref(null);
+const map = ref(null)
+
+const centerCordinates = [36.817223, -1.286389];
+const targetCordinates = [36.827223, -1.296389];
+
+const centerMarker = ref< [Number,Number] >(null);
+const targetMarker = ref< [Number,Number] >(null);
 
 function initializeMap() {
   try {
     const centerCoords = [36.817223, -1.286389];
 
-    const map = new maplibregl.Map({
+    map.value = new maplibregl.Map({
       container: mapContainer.value,
       style: {
         version: 8,
@@ -34,12 +45,12 @@ function initializeMap() {
       zoom: 12
     });
 
-    map.addControl(new maplibregl.NavigationControl());
-    map.resize(); // ensure correct centering
+    map.value.addControl(new maplibregl.NavigationControl());
+    map.value.resize(); // ensure correct centering
 
     new maplibregl.Marker()
       .setLngLat(centerCoords)
-      .addTo(map);
+      .addTo(map.value);
   } catch (error) {
     console.error('Error initializing map', error);
   }
