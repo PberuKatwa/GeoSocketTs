@@ -7,19 +7,34 @@ class MapService{
     private map:LibreMap | null;
     public centerMarker: Marker| null;
     public targetMarker: Marker|null;
-    public waypointMarkers: Array<Marker>|null;
+    public waypointMarkers: Array<Marker>|[];
 
     constructor(){
         this.map = null;
         this.centerMarker = null;
         this.targetMarker = null;
-        this.waypointMarkers = null;
+        this.waypointMarkers = [];
     }
 
-    public initializeMap( container:HTMLElement, centerCordinates:[number,number], zoom = 12 ):LibreMap{
+    private destroy():void{
         try{
 
-            if(this.map) this.map = null;
+            this.map = null;
+            this.centerMarker = null;
+            this.targetMarker = null;
+            this.waypointMarkers = [];
+
+        }catch(error){
+            throw error;
+        }
+    }
+
+    public initializeMap( initOptions:MapInitializationOptions ):LibreMap{
+        try{
+
+            if(this.map) this.destroy();
+
+            const { container, zoom ,centerCordinates } = initOptions;
 
             this.map = new maplibregl.Map({
                 container: container,
@@ -56,7 +71,7 @@ class MapService{
         }
     }
 
-    public setCenterMarker(coordinates: [number, number]):Marker {
+    public setCenterMarker(coordinates: mapCoordinates):Marker {
         try{
 
             if (!this.map) throw new Error(`The map was not initialized`);
@@ -77,7 +92,7 @@ class MapService{
 
     }
 
-    public setTargetMarker(coordinates: [number, number]):Marker {
+    public setTargetMarker(coordinates:mapCoordinates):Marker {
         try{
 
             if (!this.map) throw new Error(`No map was initialized`);
@@ -97,7 +112,7 @@ class MapService{
 
     }
 
-    public drawPath(pathCordinates: [number, number][]):LibreMap {
+    public drawPath(pathCordinates: Array< mapCoordinates > ):LibreMap {
         try{
 
             if (!this.map) throw new Error(`The map was not initialized`);
