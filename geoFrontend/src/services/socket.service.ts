@@ -5,8 +5,8 @@ class SocketService{
     private readonly url:string;
     private readonly socket;
     public isConnected:boolean;
-    public routeResponse!:RouteResponse;
-    public driverLocation!:DriverCordinates;
+    public routeResponse:RouteResponse | null = null;
+    public driverLocation:DriverCordinates | null = null;
     public isTracking:boolean;
     public hasJourneyStarted:boolean;
 
@@ -53,6 +53,8 @@ class SocketService{
                 }
             })
 
+            if(!this.routeResponse) throw new Error(`No route response was provided`)
+
             return this.routeResponse
 
         }catch(error){
@@ -69,6 +71,8 @@ class SocketService{
                     latitude:data.latitude
                 }
             })
+
+            if(!this.driverLocation) throw new Error(`No driver location was provided`)
 
             return this.driverLocation;
 
