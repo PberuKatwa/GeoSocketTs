@@ -1,0 +1,52 @@
+// composables/useMap.ts
+import { ref } from "vue";
+import MapService from "../services/map.service";
+import type { MapInitializationOptions, mapCoordinates } from "@/types/geo.types";
+import type { Map as LibreMap } from "maplibre-gl"
+
+export function useMap() {
+  const map = ref<MapService | null>(null);
+
+  function initializeMap( options:MapInitializationOptions ){
+    try{
+        map.value = new MapService()
+        map.value.initializeMap(options)
+    }catch(error){
+        console.error(`Error in initializing libre map`, error )
+    }
+  }
+
+  function setCenterMarker(coordinates:mapCoordinates){
+    try{
+        map.value?.setCenterMarker(coordinates)
+    }catch(error){
+        console.error( `Error in setting center marker`,error)
+    }
+  }
+
+  function setTargetMarker( coordinates:mapCoordinates){
+    try{
+        map.value?.setTargetMarker(coordinates)
+    }catch(error){
+        console.error(`Error in setting target marker`, error)
+    }
+
+  }
+
+  function drawPath( pathCordinates: Array<mapCoordinates> ){
+    try{
+        map.value?.drawPath(pathCordinates)
+    }catch(error){
+        console.error(`error in drawing path`, error)
+    }
+
+  }
+
+  return {
+    map,
+    initializeMap,
+    setCenterMarker,
+    setTargetMarker,
+    drawPath
+  };
+}
