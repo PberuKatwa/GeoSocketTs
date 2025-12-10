@@ -11,3 +11,11 @@ export interface RouteResponse {
         coordinates: any;  
     }
 }
+
+export type coordinates = [number, number]
+
+export interface MapInitializationOptions {
+    container:HTMLElement,
+    centerCordinates:coordinates,
+    zoom?:number
+}

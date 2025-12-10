@@ -95,7 +95,7 @@ class MapService{
 
     }
 
-      drawPath(pathCordinates: [number, number][]):maplibregl.Map {
+    public drawPath(pathCordinates: [number, number][]):maplibregl.Map {
         try{
 
             if (!this.map) throw new Error(`The map was not initialized`);
@@ -127,7 +127,7 @@ class MapService{
             });
 
             return this.map
-            
+
         }catch(error){
             throw error;
         }
