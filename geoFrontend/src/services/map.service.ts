@@ -151,6 +151,26 @@ class MapService{
 
     }
 
+    public chooseCoordinates(): Promise<[number, number]> {
+        if (!this.map) throw new Error(`The map was not initialized`);
+
+        return new Promise((resolve) => {
+            const handler = (event: maplibregl.MapMouseEvent ) => {
+            const coords: [number, number] = [
+                event.lngLat.lng,
+                event.lngLat.lat,
+            ];
+            this.map?.off("click", handler);  // remove listener after resolving
+            resolve(coords);
+            };
+
+            if (!this.map) throw new Error(`The map was not initialized`);
+            
+            this.map.on("click", handler);
+        });
+    }
+
+
 }
 
 export default MapService;

@@ -1,11 +1,10 @@
-// composables/useMap.ts
-import { ref } from "vue";
+import { ref, shallowRef } from "vue";
 import MapService from "../services/map.service";
 import type { MapInitializationOptions, mapCoordinates } from "@/types/geo.types";
 import type { Map as LibreMap } from "maplibre-gl"
 
 export function useMap() {
-  const map = ref<MapService | null>(null);
+  const map = shallowRef<MapService | null>(null);
 
   function initializeMap( options:MapInitializationOptions ){
     try{
@@ -42,11 +41,21 @@ export function useMap() {
 
   }
 
+  async function chooseCoordinates(){
+    try{
+        if(!map.value || map.value === undefined) throw new Error()
+        return await map.value?.chooseCoordinates()
+    }catch(error){
+        console.error(`Error in choosing coordinates`, error)
+    }
+  }
+
   return {
     map,
     initializeMap,
     setCenterMarker,
     setTargetMarker,
-    drawPath
+    drawPath,
+    chooseCoordinates
   };
 }
