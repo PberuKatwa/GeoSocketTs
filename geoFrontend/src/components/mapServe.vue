@@ -5,38 +5,38 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
-import { useMap } from "../composables/use.map";
-import type { mapCoordinates } from "@/types/geo.types";
+  import { onMounted, ref } from "vue";
+  import { useMap } from "../composables/use.map";
+  import type { mapCoordinates } from "@/types/geo.types";
 
-const mapContainer = ref<HTMLElement | null>(null);
-const { initializeMap, setCenterMarker, chooseCoordinates, setTargetMarker } = useMap();
+  const mapContainer = ref<HTMLElement | null>(null);
+  const { initializeMap, setCenterMarker, chooseCoordinates, setTargetMarker } = useMap();
 
-onMounted(() => {
-  if (!mapContainer.value) return;
+  onMounted(() => {
+    if (!mapContainer.value) return;
 
-  initializeMap({
-    container: mapContainer.value,
-    centerCordinates: [36.817223, -1.286389],
-    zoom: 12,
+    initializeMap({
+      container: mapContainer.value,
+      centerCordinates: [36.817223, -1.286389],
+      zoom: 12,
+    });
   });
-});
 
-async function addCenter(coordinates:mapCoordinates) {
-  const coords = await chooseCoordinates()
-  if(!coords || coords===undefined  ) throw new Error(`No coords were found`)
-  setCenterMarker(coords)
-}
-
-async function addTarget(){
-  try{
+  async function addCenter() {
     const coords = await chooseCoordinates()
     if(!coords || coords===undefined  ) throw new Error(`No coords were found`)
-    setTargetMarker(coords)
-  }catch(error){
-    console.error(`Error in choosing center`, error)
+    setCenterMarker(coords)
   }
-}
+
+  async function addTarget(){
+    try{
+      const coords = await chooseCoordinates()
+      if(!coords || coords===undefined  ) throw new Error(`No coords were found`)
+      setTargetMarker(coords)
+    }catch(error){
+      console.error(`Error in choosing center`, error)
+    }
+  }
 
 </script>
 
