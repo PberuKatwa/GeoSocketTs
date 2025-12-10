@@ -1,11 +1,12 @@
 import maplibregl from "maplibre-gl";
+import type { Marker, Map as LibreMap } from "maplibre-gl";
 
 class MapService{
 
-    private map:maplibregl.Map | null;
-    public centerMarker: maplibregl.Marker| null;
-    public targetMarker: maplibregl.Marker|null;
-    public waypointMarkers: Array<maplibregl.Marker>|null;
+    private map:LibreMap | null;
+    public centerMarker: Marker| null;
+    public targetMarker: Marker|null;
+    public waypointMarkers: Array<Marker>|null;
 
     constructor(){
         this.map = null;
@@ -14,7 +15,7 @@ class MapService{
         this.waypointMarkers = null;
     }
 
-    public initializeMap( container:HTMLElement, centerCordinates:[number,number], zoom = 12 ):maplibregl.Map{
+    public initializeMap( container:HTMLElement, centerCordinates:[number,number], zoom = 12 ):LibreMap{
         try{
 
             if(this.map) this.map = null;
@@ -54,7 +55,7 @@ class MapService{
         }
     }
 
-    public setCenterMarker(coordinates: [number, number]):maplibregl.Marker {
+    public setCenterMarker(coordinates: [number, number]):Marker {
         try{
 
             if (!this.map) throw new Error(`The map was not initialized`);
@@ -75,7 +76,7 @@ class MapService{
 
     }
 
-    public setTargetMarker(coordinates: [number, number]):maplibregl.Marker {
+    public setTargetMarker(coordinates: [number, number]):Marker {
         try{
 
             if (!this.map) throw new Error(`No map was initialized`);
@@ -95,7 +96,7 @@ class MapService{
 
     }
 
-    public drawPath(pathCordinates: [number, number][]):maplibregl.Map {
+    public drawPath(pathCordinates: [number, number][]):LibreMap {
         try{
 
             if (!this.map) throw new Error(`The map was not initialized`);
