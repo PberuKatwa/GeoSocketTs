@@ -54,10 +54,10 @@ class MapService{
         }
     }
 
-    public setCenterMarker(coordinates: [number, number]) {
+    public setCenterMarker(coordinates: [number, number]):maplibregl.Marker {
         try{
 
-            if (!this.map) return;
+            if (!this.map) throw new Error(`The map was not initialized`);
 
             if (this.centerMarker) this.centerMarker.remove();
 
@@ -65,22 +65,30 @@ class MapService{
             .setLngLat(coordinates)
             .addTo(this.map);
 
+            if(!this.centerMarker) throw new Error(`NO center marker was set`)
+            
+            return this.centerMarker;
+            
         }catch(error){
             throw error;
         }
 
     }
 
-    public setTargetMarker(coordinates: [number, number]) {
+    public setTargetMarker(coordinates: [number, number]):maplibregl.Marker {
         try{
-            
-            if (!this.map) return;
+
+            if (!this.map) throw new Error(`No map was initialized`);
 
             if (this.targetMarker) this.targetMarker.remove();
 
             this.targetMarker = new maplibregl.Marker({ color: "red" })
             .setLngLat(coordinates)
             .addTo(this.map);
+
+            if(!this.targetMarker) throw new Error(`The target marker was not set`)
+
+            return this.targetMarker
         }catch(error){
             throw error;
         }
