@@ -3,9 +3,9 @@ import maplibregl from "maplibre-gl";
 class MapService{
 
     private map:maplibregl.Map | null;
-    private centerMarker: maplibregl.Marker| null;
-    private targetMarker: maplibregl.Marker|null;
-    private waypointMarkers: Array<maplibregl.Marker>|null;
+    public centerMarker: maplibregl.Marker| null;
+    public targetMarker: maplibregl.Marker|null;
+    public waypointMarkers: Array<maplibregl.Marker>|null;
 
     constructor(){
         this.map = null;
@@ -14,8 +14,37 @@ class MapService{
         this.waypointMarkers = null;
     }
 
-    initializeMap(){
+    initializeMap( container:HTMLElement, centerCordinates:[number,number], zoom = 12 ):maplibregl.Map{
         try{
+
+            if(this.map) this.map = null;
+
+            this.map = new maplibregl.Map({
+                container: container,
+                style: {
+                    version: 8,
+                    sources: {
+                    osm: {
+                        type: 'raster',
+                        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                        tileSize: 256,
+                        attribution: '© OSM',
+                        maxzoom: 19
+                    }
+                    },
+                    layers: [
+                    { id: 'osm', type: 'raster', source: 'osm' }
+                    ]
+                },
+                center: centerCordinates, 
+                zoom: 12
+            })
+
+            this.centerMarker = new maplibregl.Marker()
+            .setLngLat(centerCordinates)
+            .addTo(this.map)
+            
+            return this.map
 
         }catch(error){
             throw error;
