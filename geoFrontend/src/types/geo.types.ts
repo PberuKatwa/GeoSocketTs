@@ -12,10 +12,10 @@ export interface RouteResponse {
     }
 }
 
-export type coordinates = [number, number]
+export type mapCoordinates = [number, number]
 
 export interface MapInitializationOptions {
     container:HTMLElement,
-    centerCordinates:coordinates,
+    centerCordinates:mapCoordinates,
     zoom?:number
 }

@@ -1,5 +1,6 @@
 import maplibregl from "maplibre-gl";
 import type { Marker, Map as LibreMap } from "maplibre-gl";
+import type { mapCoordinates, MapInitializationOptions } from "@/types/geo.types";
 
 class MapService{
 
@@ -38,7 +39,7 @@ class MapService{
                     ]
                 },
                 center: centerCordinates, 
-                zoom: 12
+                zoom: zoom
             })
 
             this.centerMarker = new maplibregl.Marker()
