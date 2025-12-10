@@ -68,7 +68,7 @@ class MapService{
             if(!this.centerMarker) throw new Error(`NO center marker was set`)
             
             return this.centerMarker;
-            
+
         }catch(error){
             throw error;
         }
@@ -89,6 +89,45 @@ class MapService{
             if(!this.targetMarker) throw new Error(`The target marker was not set`)
 
             return this.targetMarker
+        }catch(error){
+            throw error;
+        }
+
+    }
+
+      drawPath(pathCordinates: [number, number][]):maplibregl.Map {
+        try{
+
+            if (!this.map) throw new Error(`The map was not initialized`);
+
+            if (this.map.getSource("route")) {
+            this.map.removeLayer("route");
+            this.map.removeSource("route");
+            }
+
+            this.map.addSource("route", {
+                type: "geojson",
+                data: {
+                    type: "Feature",
+                    properties:{},
+                    geometry: {
+                        type: "LineString",
+                        coordinates: pathCordinates,
+                    }
+                }
+            });
+
+            this.map.addLayer({
+                id: "route",
+                type: "line",
+                source: "route",
+                paint: {
+                    "line-width": 4,
+                }
+            });
+
+            return this.map
+            
         }catch(error){
             throw error;
         }
