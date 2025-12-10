@@ -14,7 +14,7 @@ class MapService{
         this.waypointMarkers = null;
     }
 
-    initializeMap( container:HTMLElement, centerCordinates:[number,number], zoom = 12 ):maplibregl.Map{
+    public initializeMap( container:HTMLElement, centerCordinates:[number,number], zoom = 12 ):maplibregl.Map{
         try{
 
             if(this.map) this.map = null;
@@ -43,12 +43,48 @@ class MapService{
             this.centerMarker = new maplibregl.Marker()
             .setLngLat(centerCordinates)
             .addTo(this.map)
-            
+
+            this.map.addControl( new maplibregl.NavigationControl() );
+            this.map.resize();
+
             return this.map
 
         }catch(error){
             throw error;
         }
+    }
+
+    public setCenterMarker(coordinates: [number, number]) {
+        try{
+
+            if (!this.map) return;
+
+            if (this.centerMarker) this.centerMarker.remove();
+
+            this.centerMarker = new maplibregl.Marker({ color: "green" })
+            .setLngLat(coordinates)
+            .addTo(this.map);
+
+        }catch(error){
+            throw error;
+        }
+
+    }
+
+    public setTargetMarker(coordinates: [number, number]) {
+        try{
+            
+            if (!this.map) return;
+
+            if (this.targetMarker) this.targetMarker.remove();
+
+            this.targetMarker = new maplibregl.Marker({ color: "red" })
+            .setLngLat(coordinates)
+            .addTo(this.map);
+        }catch(error){
+            throw error;
+        }
+
     }
 
 }
