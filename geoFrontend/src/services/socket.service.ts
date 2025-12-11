@@ -38,7 +38,7 @@ class SocketService{
             this.socket.on( 'route-calculated', data => {
                 const coords = data.route?.coordinates
                 if (!coords) return
-                
+
                 this.routeResponse = {
                     distanceKm:data.distanceKm,
                     etaMinutes:data.etaMinutes,
@@ -124,6 +124,7 @@ class SocketService{
     public startSimulation(driverId:string, targetLat:number, targetLng:number , startLat:number, startLng:number): {
         isTracking:boolean ,hasJourneyStarted:boolean
     } 
+    
     {
         try{
 
