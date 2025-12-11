@@ -181,7 +181,7 @@ class MapService{
     }
 
     public chooseCoordinates(): Promise<mapCoordinates> {
-        if (!this.map) throw new Error(`The map was not initialized`);
+        if (!this.map) throw new Error(`The maap was not initialized`);
 
         return new Promise((resolve) => {
             const handler = (event: maplibregl.MapMouseEvent ) => {
