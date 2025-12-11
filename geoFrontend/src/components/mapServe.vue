@@ -24,11 +24,8 @@
     setCenterMarker(coords)
   }
 
-  // Watch for route calculation response and draw the path
   watch(() => socketStore.routeResponse, (newRoute) => {
-
     if (newRoute?.route?.coordinates) {
-      // Convert coordinates to mapCoordinates format
       const pathCoords = newRoute?.route?.coordinates
       drawPath(pathCoords);
     }

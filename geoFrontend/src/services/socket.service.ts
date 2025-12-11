@@ -1,5 +1,5 @@
 import { io } from "socket.io-client";
-import type { DriverCordinates, RouteResponse } from "@/types/geo.types";
+import type { DriverCordinates, RouteResponse, osrmCoordinates } from "@/types/geo.types";
 
 class SocketService{
     private readonly url:string;
@@ -111,7 +111,7 @@ class SocketService{
         this.onDriverLocationUpdate = callback;
     }
 
-    public requestRoute( from:{}, to:{} ){
+    public requestRoute( from:osrmCoordinates, to:osrmCoordinates ){
         try{
 
             this.socket.emit( 'calculate-route', { from,to })
@@ -124,7 +124,7 @@ class SocketService{
     public startSimulation(driverId:string, targetLat:number, targetLng:number , startLat:number, startLng:number): {
         isTracking:boolean ,hasJourneyStarted:boolean
     } 
-    
+
     {
         try{
 
