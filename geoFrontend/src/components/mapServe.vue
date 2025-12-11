@@ -6,7 +6,7 @@
 </template>
 
 <script setup lang="ts">
-  import { onMounted, ref } from "vue";
+  import { onMounted, ref, watch } from "vue";
   import { useMap } from "../composables/use.map";
   import type { mapCoordinates,osrmCoordinates } from "@/types/geo.types";
   import { useSocketClientStore } from "@/stores/socket.client";
@@ -15,7 +15,7 @@
   const centerCordinates = ref< mapCoordinates>( [ 36.812416481445524, -1.2753196077525502 ] )
   const targetCordinates = ref< mapCoordinates>( [ 36.82374613232531, -1.2991745172969615 ] )
   const mapContainer = ref<HTMLElement | null>(null);
-  const { initializeMap, setCenterMarker, chooseCoordinates, setTargetMarker } = useMap();
+  const { initializeMap, setCenterMarker, chooseCoordinates, setTargetMarker, drawPath } = useMap();
 
   async function addCenter() {
     const coords = await chooseCoordinates()
@@ -23,6 +23,16 @@
     centerCordinates.value = coords
     setCenterMarker(coords)
   }
+
+  // Watch for route calculation response and draw the path
+  watch(() => socketStore.routeResponse, (newRoute) => {
+
+    if (newRoute?.route?.coordinates) {
+      // Convert coordinates to mapCoordinates format
+      const pathCoords = newRoute?.route?.coordinates
+      drawPath(pathCoords);
+    }
+  });
 
   async function addTarget(){
     try{

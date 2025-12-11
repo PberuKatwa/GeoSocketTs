@@ -108,43 +108,64 @@ class MapService{
 
     }
 
-    public drawPath(pathCordinates: Array< mapCoordinates > ):LibreMap {
-        try{
+    public drawPath(pathCoordinates: mapCoordinates[]): LibreMap {
+        try {
+            if (!this.map) throw new Error("The map was not initialized");
 
-            if (!this.map) throw new Error(`The map was not initialized`);
+            const sourceId = "route";
+            const layerId = "route";
 
-            if (this.map.getSource("route")) {
-            this.map.removeLayer("route");
-            this.map.removeSource("route");
+            if (this.map.getLayer(layerId)) {
+                this.map.removeLayer(layerId);
+            }
+            if (this.map.getSource(sourceId)) {
+                this.map.removeSource(sourceId);
             }
 
-            this.map.addSource("route", {
+            this.map.addSource(sourceId, {
                 type: "geojson",
                 data: {
                     type: "Feature",
-                    properties:{},
+                    properties: {},
                     geometry: {
                         type: "LineString",
-                        coordinates: pathCordinates,
+                        coordinates: pathCoordinates,
                     }
                 }
             });
 
             this.map.addLayer({
-                id: "route",
+                id: `${layerId}-shadow`,
                 type: "line",
-                source: "route",
+                source: sourceId,
                 paint: {
-                    "line-width": 4,
+                    "line-color": "#1d4ed8",      
+                    "line-width": 12,
+                    "line-opacity": 0.25,
+                    "line-blur": 2
                 }
             });
 
-            return this.map
+            this.map.addLayer({
+                id: layerId,
+                type: "line",
+                source: sourceId,
+                layout: {
+                    "line-join": "round",
+                    "line-cap": "round"
+                },
+                paint: {
+                    "line-color": "#3b82f6",      
+                    "line-width": 6,
+                    "line-opacity": 0.95
+                }
+            });
 
-        }catch(error){
+            return this.map;
+
+        } catch (error) {
             throw error;
         }
-
     }
 
     public chooseCoordinates(): Promise<mapCoordinates> {
