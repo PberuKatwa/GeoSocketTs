@@ -19,6 +19,7 @@ export const useSocketClientStore = defineStore( "socketClient", function(){
     })
 
     socketService.onDriverLocation(function(driverLocation){
+        // console.log("driver locationnnn", driverLocation)
         driverCordinates.value = driverLocation
     })
 

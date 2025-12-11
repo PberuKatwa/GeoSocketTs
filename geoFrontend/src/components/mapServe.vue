@@ -2,6 +2,8 @@
   <button @click="addCenter">Add Center</button>
   <button @click="addTarget">Add Target</button>
   <button @click="requestRoute">Request Route</button>
+  <button @click="startSimulation">Start Simulation</button>
+  <button @click="stopSimulation">Stop Simulation</button>
   <div ref="mapContainer" class="map-container"></div>
 </template>
 
@@ -53,6 +55,30 @@
       socketStore.requestRoute(from,to)
     }catch(error){
       console.error(`errror in requesting route`, error)
+    }
+  }
+
+  async function startSimulation(){
+    try{
+
+      if(!centerCordinates.value) return;
+      if(!targetCordinates.value) return;
+
+
+
+      socketStore.startSimulation("driver-001",targetCordinates.value[1], targetCordinates.value[0], centerCordinates.value[1], centerCordinates.value[0])
+      console.log("driverr", socketStore.driverCordinates)
+    }catch(error){
+      console.error(`Error in starting simulation`,error)
+    }
+  }
+
+    async function stopSimulation(){
+    try{
+
+      socketStore.stopSimulation()
+    }catch(error){
+      console.error(`Error in starting simulation`,error)
     }
   }
 
