@@ -115,9 +115,15 @@ class MapService{
             const sourceId = "route";
             const layerId = "route";
 
-            if (this.map.getLayer(layerId)) {
-                this.map.removeLayer(layerId);
-            }
+            const layersToRemove = [layerId, `${layerId}-glow`, `${layerId}-shadow`];
+            
+            layersToRemove.forEach(layer => {
+                if (!this.map) throw new Error("The map was not initialized");
+                if (this.map.getLayer(layer)) {
+                    this.map.removeLayer(layer);
+                }
+            });
+
             if (this.map.getSource(sourceId)) {
                 this.map.removeSource(sourceId);
             }
@@ -135,14 +141,18 @@ class MapService{
             });
 
             this.map.addLayer({
-                id: `${layerId}-shadow`,
+                id: `${layerId}-glow`,
                 type: "line",
                 source: sourceId,
+                layout: {
+                    "line-join": "round",
+                    "line-cap": "round"
+                },
                 paint: {
-                    "line-color": "#1d4ed8",      
-                    "line-width": 12,
-                    "line-opacity": 0.25,
-                    "line-blur": 2
+                    "line-color": "#2563eb",
+                    "line-width": 8,
+                    "line-opacity": 0.15,
+                    "line-blur": 4
                 }
             });
 
@@ -155,9 +165,9 @@ class MapService{
                     "line-cap": "round"
                 },
                 paint: {
-                    "line-color": "#3b82f6",      
-                    "line-width": 6,
-                    "line-opacity": 0.95
+                    "line-color": "#3b82f6",
+                    "line-width": 3.5,
+                    "line-opacity": 1
                 }
             });
 
