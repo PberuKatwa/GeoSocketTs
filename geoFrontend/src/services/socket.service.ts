@@ -18,6 +18,47 @@ class SocketService{
         this.hasJourneyStarted = false;
     }
 
+    private setupListeners(){
+        try{
+
+            this.socket.on( 'connect', ()=> {
+                this.isConnected = true 
+                console.log(`Connected to socket server successfully`)
+            })
+
+            this.socket.on( 'disconnect', ()=> {
+                this.isConnected = false;
+                console.log(`Socket has been disconnected`) 
+            })
+
+            this.socket.on( 'route-calculated', data => {
+                const coords = data.route?.coordinates
+                if (!coords) return
+                this.routeResponse = {
+                    distanceKm:data.distanceKm,
+                    etaMinutes:data.etaMinutes,
+                    route:data.route
+                }
+
+                console.log("found routes coords", coords)
+            })
+
+            this.socket.on( 'driver-location', data => {
+                this.driverLocation = {
+                    longitude:data.longitude,
+                    latitude:data.latitude
+                }
+
+                console.log(`Socket found driver location`, this.driverLocation)
+            })
+
+
+
+        }catch(error){
+            throw error;
+        }
+    }
+
     public connectIoServer():boolean{
         try{
 
