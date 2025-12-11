@@ -1,4 +1,5 @@
 import maplibregl from "maplibre-gl";
+import { LngLatBounds } from "maplibre-gl";
 import type { Marker, Map as LibreMap } from "maplibre-gl";
 import type { mapCoordinates, MapInitializationOptions } from "@/types/geo.types";
 
@@ -171,6 +172,7 @@ class MapService{
                 }
             });
 
+            this.fitBoundsToCoordinates(pathCoordinates)
             return this.map;
 
         } catch (error) {
@@ -194,6 +196,25 @@ class MapService{
             if (!this.map) throw new Error(`The map was not initialized`);
             
             this.map.on("click", handler);
+        });
+    }
+
+    private fitBoundsToCoordinates(coordinates: mapCoordinates[]): void {
+        if (!this.map || coordinates.length === 0) return;
+
+        const bounds = new LngLatBounds();
+
+        coordinates.forEach(coord => { bounds.extend([coord[0], coord[1]]); });
+            
+        this.map.fitBounds(bounds, {
+            padding: {
+                top: 80,    
+                bottom: 80, 
+                left: 80,   
+                right: 80   
+            },
+            maxZoom: 15,  
+            duration: 1000 
         });
     }
 
