@@ -61,8 +61,6 @@ class SocketService{
                 if (this.onDriverLocationUpdate) {
                     this.onDriverLocationUpdate(this.driverLocation);
                 }
-
-                console.log(`Socket found driver location`, this.driverLocation)
             })
 
 

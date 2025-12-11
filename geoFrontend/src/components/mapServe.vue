@@ -73,7 +73,7 @@
     }
   }
 
-    async function stopSimulation(){
+  async function stopSimulation(){
     try{
 
       socketStore.stopSimulation()
@@ -81,6 +81,12 @@
       console.error(`Error in starting simulation`,error)
     }
   }
+
+  watch(() => socketStore.driverCordinates , (coordinates) => {
+    if (coordinates) {
+        console.log(`Cooordinatessssss`, coordinates)
+    }
+  });
 
   onMounted(() => {
     if (!mapContainer.value) return;
