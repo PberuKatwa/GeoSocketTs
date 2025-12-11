@@ -19,6 +19,7 @@ class SocketService{
         this.socket = io(url);
         this.isTracking = false;
         this.hasJourneyStarted = false;
+        this.setupListeners()
     }
 
     private setupListeners(){
@@ -37,7 +38,7 @@ class SocketService{
             this.socket.on( 'route-calculated', data => {
                 const coords = data.route?.coordinates
                 if (!coords) return
-                console.log("found routes coords", coords)
+                
                 this.routeResponse = {
                     distanceKm:data.distanceKm,
                     etaMinutes:data.etaMinutes,

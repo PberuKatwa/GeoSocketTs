@@ -11,12 +11,9 @@
   import type { mapCoordinates,osrmCoordinates } from "@/types/geo.types";
   import { useSocketClientStore } from "@/stores/socket.client";
 
-  const fromCoords = ref({ lat: -1.286389, lng: 36.817223 })
-  const toCoords = ref({ lat: -1.292066, lng: 36.821946 })
-
   const socketStore = useSocketClientStore()
-  const centerCordinates = ref< mapCoordinates>( [ 36.817223, -1.286389 ] )
-  const targetCordinates = ref< mapCoordinates>( [ 36.821946, -1.292066 ] )
+  const centerCordinates = ref< mapCoordinates>( [ 36.812416481445524, -1.2753196077525502 ] )
+  const targetCordinates = ref< mapCoordinates>( [ 36.82374613232531, -1.2991745172969615 ] )
   const mapContainer = ref<HTMLElement | null>(null);
   const { initializeMap, setCenterMarker, chooseCoordinates, setTargetMarker } = useMap();
 
@@ -63,6 +60,8 @@
     });
 
     setCenterMarker(centerCordinates.value)
+    setTargetMarker(targetCordinates.value)
+
   });
 
 </script>

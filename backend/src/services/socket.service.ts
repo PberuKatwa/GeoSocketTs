@@ -13,7 +13,9 @@ class SocketService{
       socketServer.registerEvent( "calculate-route", async function( data, socket ) {
 
         const { from, to } = data;
-        console.log("at serrverrrr", data)
+
+        logger.SocketIo(`Event calculate-route has been received and is being processed`)
+
         const tripRoute = new Route( 
           [from.lng, from.lat],
           [to.lng, to.lat] ,
@@ -21,6 +23,8 @@ class SocketService{
         )
 
         const result = await tripRoute.computeRoute()
+
+        logger.info(`Route has been successfully calculated`)
 
         socket.emit("route-calculated", {
 
