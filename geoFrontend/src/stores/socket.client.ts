@@ -15,7 +15,6 @@ export const useSocketClientStore = defineStore( "socketClient", function(){
     const hasJourneyStarted = ref<boolean>(false)
 
     socketService.onRoute(function(route){
-        console.log("this is the routeeee", route)
         routeResponse.value = route
     })
 

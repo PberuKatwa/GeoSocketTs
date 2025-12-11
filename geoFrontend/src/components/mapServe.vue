@@ -49,7 +49,6 @@
     try{
       if(!centerCordinates.value) return;
       if(!targetCordinates.value) return;
-      console.log("request route clicked", centerCordinates.value, targetCordinates.value)
 
       const from:osrmCoordinates = { lat:centerCordinates.value[1], lng:centerCordinates.value[0] } 
       const to:osrmCoordinates = { lat:targetCordinates.value[1], lng:targetCordinates.value[0] }
