@@ -2,6 +2,7 @@ import { ref } from "vue";
 import { defineStore } from "pinia";
 import SocketService from "@/services/socket.service";
 import type { RouteResponse, DriverCordinates } from "@/types/geo.types";
+import type { mapCoordinates, osrmCoordinates } from "@/types/geo.types";
 
 const socketService = new SocketService("http://localhost:4000")
 
@@ -13,6 +14,13 @@ export const useSocketClientStore = defineStore( "socketClient", function(){
     const isTracking = ref<boolean>(false)
     const hasJourneyStarted = ref<boolean>(false)
 
+    socketService.onRoute(function(route){
+        routeResponse.value = route
+    })
+
+    socketService.onDriverLocation(function(driverLocation){
+        driverCordinates.value = driverLocation
+    })
 
     function connectSocket(){
         try{
@@ -32,7 +40,7 @@ export const useSocketClientStore = defineStore( "socketClient", function(){
 
     function getRoute(){
         try{
-            return routeResponse.value = socketService.getRoute()
+            return routeResponse.value
         }catch(error){
             console.error(`Error in getting route`, error)
         }
@@ -40,13 +48,13 @@ export const useSocketClientStore = defineStore( "socketClient", function(){
 
     function getDriverLocation(){
         try{
-            return driverCordinates.value = socketService.getDriverLocation()
+            return driverCordinates.value 
         }catch(error){
             console.error(`Error in getting driver location`, error)
         }
     }
 
-    function requestRoute( from:[number,number], to:[number,number] ){
+    function requestRoute( from:osrmCoordinates, to:osrmCoordinates){
         try{
             socketService.requestRoute( from, to )
         }catch(error){

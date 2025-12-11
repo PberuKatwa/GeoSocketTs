@@ -10,6 +10,9 @@ class SocketService{
     public isTracking:boolean;
     public hasJourneyStarted:boolean;
 
+    private onRouteCalculated?: (route: RouteResponse) => void;
+    private onDriverLocationUpdate?: (location: DriverCordinates) => void;
+
     constructor(url:string){
         this.url = url;
         this.isConnected = false;
@@ -34,19 +37,28 @@ class SocketService{
             this.socket.on( 'route-calculated', data => {
                 const coords = data.route?.coordinates
                 if (!coords) return
+                console.log("found routes coords", coords)
                 this.routeResponse = {
                     distanceKm:data.distanceKm,
                     etaMinutes:data.etaMinutes,
                     route:data.route
                 }
 
-                console.log("found routes coords", coords)
+                if (this.onRouteCalculated) {
+                    this.onRouteCalculated(this.routeResponse);
+                }
+
+                
             })
 
             this.socket.on( 'driver-location', data => {
                 this.driverLocation = {
                     longitude:data.longitude,
                     latitude:data.latitude
+                }
+
+                if (this.onDriverLocationUpdate) {
+                    this.onDriverLocationUpdate(this.driverLocation);
                 }
 
                 console.log(`Socket found driver location`, this.driverLocation)
@@ -62,7 +74,12 @@ class SocketService{
     public connectIoServer():boolean{
         try{
 
-            this.socket.on( 'connect', ()=> { this.isConnected = true })
+            if(!this.isConnected){
+                this.socket.connect()
+                this.isConnected = true
+                return this.isConnected = true
+            }
+            
             return this.isConnected;
 
         }catch(error){
@@ -73,7 +90,11 @@ class SocketService{
     public disconnectIoServer():boolean{
         try{
 
-            this.socket.on( 'disconnect', ()=> { this.isConnected = false; })
+            if(this.isConnected){
+                this.socket.disconnect()
+                this.isConnected = false
+                return this.isConnected
+            }
             return this.isConnected;
 
         }catch(error){
@@ -81,48 +102,15 @@ class SocketService{
         }
     }
 
-    public getRoute():RouteResponse{
-        try{
-
-            this.socket.on( 'route-calculated', data => {
-                const coords = data.route?.coordinates
-                if (!coords) return
-                this.routeResponse = {
-                    distanceKm:data.distanceKm,
-                    etaMinutes:data.etaMinutes,
-                    route:data.route
-                }
-            })
-
-            if(!this.routeResponse) throw new Error(`No route response was provided`)
-
-            return this.routeResponse
-
-        }catch(error){
-            throw error;
-        }
+    public onRoute(callback: (route: RouteResponse) => void) {
+        this.onRouteCalculated = callback;
     }
 
-    public getDriverLocation():DriverCordinates{
-        try{
-
-            this.socket.on( 'driver-location', data => {
-                this.driverLocation = {
-                    longitude:data.longitude,
-                    latitude:data.latitude
-                }
-            })
-
-            if(!this.driverLocation) throw new Error(`No driver location was provided`)
-
-            return this.driverLocation;
-
-        }catch(error){
-            throw error;
-        }
+    public onDriverLocation(callback: (location: DriverCordinates) => void) {
+        this.onDriverLocationUpdate = callback;
     }
 
-    public requestRoute( from:[ number, number ], to:[ number, number ] ){
+    public requestRoute( from:{}, to:{} ){
         try{
 
             this.socket.emit( 'calculate-route', { from,to })

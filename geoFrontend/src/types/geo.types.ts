@@ -19,3 +19,8 @@ export interface MapInitializationOptions {
     centerCordinates:mapCoordinates,
     zoom?:number
 }
+
+export interface osrmCoordinates {
+    lat:number;
+    lng:number;
+}

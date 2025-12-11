@@ -13,7 +13,7 @@ class SocketService{
       socketServer.registerEvent( "calculate-route", async function( data, socket ) {
 
         const { from, to } = data;
-
+        console.log("at serrverrrr", data)
         const tripRoute = new Route( 
           [from.lng, from.lat],
           [to.lng, to.lat] ,

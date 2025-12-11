@@ -57,10 +57,6 @@ class MapService{
                 zoom: zoom
             })
 
-            this.centerMarker = new maplibregl.Marker()
-            .setLngLat(centerCordinates)
-            .addTo(this.map)
-
             this.map.addControl( new maplibregl.NavigationControl() );
             this.map.resize();
 
