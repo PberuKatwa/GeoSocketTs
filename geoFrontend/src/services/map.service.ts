@@ -118,11 +118,21 @@ class MapService{
 
         if (!this.driverMarker) {
 
+            const el = document.createElement("div");
+            el.innerHTML = `<i class="fa-solid fa-motorcycle"></i>`;
+            // el.innerHTML = `<i class="fa-solid fa-car-side"></i>`;
+
+
+            // Style it to be clean and minimal
+            el.style.fontSize = "22px";
+            el.style.color = "#20395aff"; // or any accent color
+            el.style.transform = "translate(-50%, -50%)";
+
             this.driverMarker = new maplibregl.Marker({
-                color: "#000",
+                element: el,
             })
-            .setLngLat(coords)
-            .addTo(this.map);
+                .setLngLat(coords)
+                .addTo(this.map);
 
             return this.driverMarker;
         }
