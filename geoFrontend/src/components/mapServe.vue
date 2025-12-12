@@ -17,7 +17,7 @@
   const centerCordinates = ref< mapCoordinates>( [ 36.812416481445524, -1.2753196077525502 ] )
   const targetCordinates = ref< mapCoordinates>( [ 36.82374613232531, -1.2991745172969615 ] )
   const mapContainer = ref<HTMLElement | null>(null);
-  const { initializeMap, setCenterMarker, chooseCoordinates, setTargetMarker, drawPath } = useMap();
+  const { initializeMap, setCenterMarker, chooseCoordinates, setTargetMarker, drawPath, updateDriver } = useMap();
 
   async function addCenter() {
     const coords = await chooseCoordinates()
@@ -85,6 +85,8 @@
   watch(() => socketStore.driverCordinates , (coordinates) => {
     if (coordinates) {
         console.log(`Cooordinatessssss`, coordinates)
+        const mapped: mapCoordinates = [coordinates.longitude, coordinates.latitude];
+        updateDriver(mapped);
     }
   });
 

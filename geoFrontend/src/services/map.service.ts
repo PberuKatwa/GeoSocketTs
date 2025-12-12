@@ -9,6 +9,8 @@ class MapService{
     public centerMarker: Marker| null;
     public targetMarker: Marker|null;
     public waypointMarkers: Array<Marker>|[];
+    private driverMarker: Marker | null = null;
+    private animationFrame: number | null = null;
 
     constructor(){
         this.map = null;
@@ -108,6 +110,73 @@ class MapService{
         }
 
     }
+
+    public setDriverMarker(coords: mapCoordinates): Marker {
+        try {
+
+        if (!this.map) throw new Error("Map not initialized");
+
+        if (!this.driverMarker) {
+
+            this.driverMarker = new maplibregl.Marker({
+                color: "#000",
+            })
+            .setLngLat(coords)
+            .addTo(this.map);
+
+            return this.driverMarker;
+        }
+
+        this.driverMarker.setLngLat(coords);
+        return this.driverMarker;
+            
+        } catch (error) {
+           throw error; 
+        }
+
+    }
+
+    public animateDriverTo(newCoords: mapCoordinates) {
+        try {
+
+            if (!this.map) return;
+            if (!this.driverMarker) {
+                this.setDriverMarker(newCoords);
+                return;
+            }
+
+            const start = this.driverMarker.getLngLat();
+            const end = { lng: newCoords[0], lat: newCoords[1] };
+
+            const duration = 900; // ms
+            const startTime = performance.now();
+
+            const animate = (now: number) => {
+                const progress = Math.min((now - startTime) / duration, 1);
+
+                const lng = start.lng + (end.lng - start.lng) * progress;
+                const lat = start.lat + (end.lat - start.lat) * progress;
+
+                this.driverMarker?.setLngLat([lng, lat]);
+
+                if (progress < 1) {
+                    this.animationFrame = requestAnimationFrame(animate);
+                }
+            };
+
+            if (this.animationFrame) cancelAnimationFrame(this.animationFrame);
+            this.animationFrame = requestAnimationFrame(animate);
+            
+        } catch (error) {
+            throw error;      
+        }
+    }
+
+
+    public updateDriverMarker(coords: mapCoordinates) {
+        this.animateDriverTo(coords);
+    }
+
 
     public drawPath(pathCoordinates: mapCoordinates[]): LibreMap {
         try {

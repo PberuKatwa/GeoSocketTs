@@ -50,12 +50,22 @@ export function useMap() {
     }
   }
 
+  function updateDriver(coords: mapCoordinates) {
+    try{
+      map.value?.updateDriverMarker(coords);
+    }catch(error){
+      console.error(`Error in updating driver location on map`, error)
+    }
+    
+  }
+
   return {
     map,
     initializeMap,
     setCenterMarker,
     setTargetMarker,
     drawPath,
-    chooseCoordinates
+    chooseCoordinates,
+    updateDriver
   };
 }
