@@ -74,6 +74,8 @@ class DriverConfig{
         try {
             if (this.interval) {
                 clearInterval(this.interval);
+                this.currentIndex = 0
+                this.path = null;
                 this.interval = undefined;
                 logger.info(`Driver ${this.driverId} simulation stopped.`);
             }

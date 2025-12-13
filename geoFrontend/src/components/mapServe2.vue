@@ -9,10 +9,14 @@
 
 <script setup lang="ts">
   import { onMounted, ref, watch } from "vue";
+  import { useRoute } from "vue-router";
   import { useMap } from "../composables/use.map";
   import type { mapCoordinates,osrmCoordinates } from "@/types/geo.types";
   import { useSocketClientStore } from "@/stores/socket.client";
 
+  const route = useRoute()
+  const driverId = route.params.id
+  console.log("driverrr idd", driverId)
   const socketStore = useSocketClientStore()
   const targetCordinates = ref< mapCoordinates>( [ 36.812416481445524, -1.2753196077525502 ] )
   const centerCordinates = ref< mapCoordinates>( [ 36.82374613232531, -1.2991745172969615 ] )
@@ -63,10 +67,12 @@
 
       if(!centerCordinates.value) return;
       if(!targetCordinates.value) return;
+      if(!driverId ) return;
+      const useId =  driverId[0]
+      if(!useId || useId === undefined) return;
 
 
-
-      socketStore.startSimulation("driver-001",targetCordinates.value[1], targetCordinates.value[0], centerCordinates.value[1], centerCordinates.value[0])
+      socketStore.startSimulation(useId,targetCordinates.value[1], targetCordinates.value[0], centerCordinates.value[1], centerCordinates.value[0])
       console.log("driverr", socketStore.driverCordinates)
     }catch(error){
       console.error(`Error in starting simulation`,error)
@@ -84,9 +90,12 @@
 
   watch(() => socketStore.driverCordinates , (coordinates) => {
     if (coordinates) {
-        console.log(`Cooordinatessssss`, coordinates)
-        const mapped: mapCoordinates = [coordinates.longitude, coordinates.latitude];
-        updateDriver(mapped);
+
+      // requestRoute()
+      console.log(`Cooordinatessssss`, coordinates)
+      const mapped: mapCoordinates = [coordinates.longitude, coordinates.latitude];
+      updateDriver(mapped);
+
     }
   });
 

@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import map from '@/views/map.vue'
 import mapServe from '@/components/mapServe.vue'
+import mapServe2 from '@/components/mapServe2.vue'
 
 const routes:Array<RouteRecordRaw> =[
 
@@ -15,6 +16,11 @@ const routes:Array<RouteRecordRaw> =[
     name:'map-test',
     component:mapServe
   },
+  {
+    path:'/map/:id',
+    name:'map-driver-id',
+    component:mapServe2
+  }
 
 ]
 const router = createRouter({
