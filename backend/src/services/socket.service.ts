@@ -49,8 +49,6 @@ class SocketService{
     socketServer.registerEvent("start-tracking", async (payload, socket) => {
 
       const { driverId, startLat, startLng, targetLat, targetLng, hasRouteChanged } = payload;
-      console.log("payloaddd", payload)
-
       logger.info(`Starting tracking for driver ${driverId}`);
 
       socket.join(`driver-${driverId}`);
