@@ -2,8 +2,14 @@ import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import map from '@/views/map.vue'
 import LibreMap from '@/components/LibreMap.vue'
+import index from '@/views/index.vue'
 
 const routes:Array<RouteRecordRaw> =[
+  {
+    path:'/',
+    name:'index',
+    component:index
+  },
 
   {
     path:'/map-test',
