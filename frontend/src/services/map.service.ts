@@ -83,6 +83,7 @@ class MapService{
 
             if(!this.centerMarker) throw new Error(`NO center marker was set`)
             
+            this.fitBoundsToAllMarkers()
             return this.centerMarker;
 
         }catch(error){
@@ -103,7 +104,7 @@ class MapService{
             .addTo(this.map);
 
             if(!this.targetMarker) throw new Error(`The target marker was not set`)
-
+            this.fitBoundsToAllMarkers()
             return this.targetMarker
         }catch(error){
             throw error;
