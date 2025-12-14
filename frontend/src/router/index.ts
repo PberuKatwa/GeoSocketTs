@@ -4,6 +4,7 @@ import map from '@/views/map.vue'
 import mapServe from '@/components/mapServe.vue'
 import mapServe2 from '@/components/mapServe2.vue'
 import mapServe3 from '@/components/mapServe3.vue'
+import LibreMap from '@/components/LibreMap.vue'
 
 const routes:Array<RouteRecordRaw> =[
 
@@ -26,6 +27,11 @@ const routes:Array<RouteRecordRaw> =[
     path:'/map2/:id',
     name:'map-driver-id2',
     component:mapServe3
+  },
+  {
+    path:'/libre-map/:id',
+    name:'libre-map',
+    component:LibreMap
   },
 
 ]
