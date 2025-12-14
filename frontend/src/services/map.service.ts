@@ -116,7 +116,6 @@ private getResponsivePadding(): { top: number; bottom: number; left: number; rig
         const width = window.innerWidth;
         const height = window.innerHeight;
         
-        // Mobile (portrait)
         if (width <= 480) {
             return {
                 top: 80,
@@ -126,7 +125,6 @@ private getResponsivePadding(): { top: number; bottom: number; left: number; rig
             };
         }
         
-        // Mobile (landscape) and tablets
         if (width <= 768) {
             return {
                 top: 60,
@@ -136,19 +134,14 @@ private getResponsivePadding(): { top: number; bottom: number; left: number; rig
             };
         }
         
-        // Desktop - account for sidebar
         return {
             top: 100,
             bottom: 100,
-            left: 320, // Sidebar width + some margin
+            left: 320, 
             right: 100
         };
     }
 
-    /**
-     * Fit map bounds to show all active markers (center, target, driver, waypoints)
-     * @param options - Custom padding and animation options
-     */
     public fitBoundsToAllMarkers(options?: {
         padding?: number | { top: number; bottom: number; left: number; right: number };
         maxZoom?: number;
@@ -159,7 +152,6 @@ private getResponsivePadding(): { top: number; bottom: number; left: number; rig
 
             const coordinates: mapCoordinates[] = [];
 
-            // Collect all marker coordinates
             if (this.centerMarker) {
                 const lngLat = this.centerMarker.getLngLat();
                 coordinates.push([lngLat.lng, lngLat.lat]);
@@ -175,7 +167,6 @@ private getResponsivePadding(): { top: number; bottom: number; left: number; rig
                 coordinates.push([lngLat.lng, lngLat.lat]);
             }
 
-            // Add waypoint markers
             if (this.waypointMarkers && this.waypointMarkers.length > 0) {
                 this.waypointMarkers.forEach(marker => {
                     const lngLat = marker.getLngLat();
@@ -183,10 +174,8 @@ private getResponsivePadding(): { top: number; bottom: number; left: number; rig
                 });
             }
 
-            // If we have no markers, do nothing
             if (coordinates.length === 0) return;
 
-            // If only one marker, just center on it
             if (coordinates.length === 1) {
                 if (coordinates[0] === undefined) throw new Error(`No coordinates were provided`);
 
@@ -198,17 +187,14 @@ private getResponsivePadding(): { top: number; bottom: number; left: number; rig
                 return;
             }
 
-            // Create bounds from all coordinates
             const bounds = new LngLatBounds();
             coordinates.forEach(coord => {
                 bounds.extend([coord[0], coord[1]]);
             });
 
-            // Get responsive padding or use custom
             let padding: { top: number; bottom: number; left: number; right: number };
             
             if (options?.padding !== undefined) {
-                // Use custom padding if provided
                 padding = typeof options.padding === 'number'
                     ? { 
                         top: options.padding, 
@@ -218,16 +204,13 @@ private getResponsivePadding(): { top: number; bottom: number; left: number; rig
                     }
                     : options.padding;
             } else {
-                // Use responsive padding
                 padding = this.getResponsivePadding();
             }
 
-            // Safety check: ensure padding doesn't exceed map container size
             const container = this.map.getContainer();
             const containerWidth = container.clientWidth;
             const containerHeight = container.clientHeight;
 
-            // Reduce padding if it's too large for the container
             const totalHorizontalPadding = padding.left + padding.right;
             const totalVerticalPadding = padding.top + padding.bottom;
 
@@ -243,7 +226,6 @@ private getResponsivePadding(): { top: number; bottom: number; left: number; rig
                 padding.bottom = Math.floor(padding.bottom * scale);
             }
 
-            // Fit bounds with safe padding
             this.map.fitBounds(bounds, {
                 padding,
                 maxZoom: options?.maxZoom ?? 15,
@@ -301,7 +283,7 @@ private getResponsivePadding(): { top: number; bottom: number; left: number; rig
             const start = this.driverMarker.getLngLat();
             const end = { lng: newCoords[0], lat: newCoords[1] };
 
-            const duration = 900; // ms
+            const duration = 900; 
             const startTime = performance.now();
 
             const animate = (now: number) => {
