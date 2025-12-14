@@ -48,7 +48,7 @@ class SocketService{
   public async startTracking(): Promise<void> {
     socketServer.registerEvent("start-tracking", async (payload, socket) => {
 
-      const { driverId, startLat, startLng, targetLat, targetLng, osrmUrl } = payload;
+      const { driverId, startLat, startLng, targetLat, targetLng, routeChanged } = payload;
 
       logger.info(`Starting tracking for driver ${driverId}`);
 
@@ -60,7 +60,7 @@ class SocketService{
         this.drivers.set(driverId, driver);
       }
 
-      await driver.startSimulation( startLat,startLng,targetLat, targetLng, "http://localhost:5000" );
+      await driver.startSimulation( startLat,startLng,targetLat, targetLng, "http://localhost:5000");
 
       const emitInterval = setInterval(() => {
 

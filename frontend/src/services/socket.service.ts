@@ -119,14 +119,14 @@ class SocketService{
         }
     }
 
-    public startSimulation(driverId:string, targetLat:number, targetLng:number , startLat:number, startLng:number): {
+    public startSimulation(driverId:string, targetLat:number, targetLng:number , startLat:number, startLng:number, hasRouteChanged:boolean): {
         isTracking:boolean ,hasJourneyStarted:boolean
     } 
 
     {
         try{
 
-            this.socket.emit( 'start-tracking', { driverId, targetLat, targetLng , startLat, startLng })
+            this.socket.emit( 'start-tracking', { driverId, targetLat, targetLng , startLat, startLng, hasRouteChanged })
             this.isTracking = true;
             this.hasJourneyStarted = true;   
 

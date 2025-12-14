@@ -63,9 +63,9 @@ export const useSocketClientStore = defineStore( "socketClient", function(){
         }
     }
 
-    function startSimulation( driverId:string, targetLat:number, targetLng:number , startLat:number, startLng:number ){
+    function startSimulation( driverId:string, targetLat:number, targetLng:number , startLat:number, startLng:number,hasRouteChanged:boolean ){
         try{
-            const{ isTracking:tracking, hasJourneyStarted:started } = socketService.startSimulation(driverId, targetLat, targetLng, startLat, startLng)
+            const{ isTracking:tracking, hasJourneyStarted:started } = socketService.startSimulation(driverId, targetLat, targetLng, startLat, startLng, hasRouteChanged)
 
             isTracking.value = tracking;
             hasJourneyStarted.value = started;

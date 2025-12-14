@@ -46,19 +46,23 @@ class DriverConfig{
         startLongitude:number,
         targetLatitude:number,
         targetLongitude:number,
-        osrmUrl:string 
+        osrmUrl:string,
+        routeChanged:boolean = false 
     ){
         try{
 
-            this.stopSimulation()
+            // this.stopSimulation()
             if(!startLatitude) throw new Error(`No starting latitude was provided`);
             if(!startLongitude) throw new Error(`No start longitude was provided`);
             if(!targetLatitude) throw new Error(`No target latitude was provided`);
             if(!targetLongitude) throw new Error(`No target longitude was provided`);
             if(!osrmUrl) throw new Error(`No osm url was provided.`);
+          
+            // if(routeChanged){
+                this.latitude = startLatitude;
+                this.longitude = startLongitude;
+            // }
             
-            this.latitude = startLatitude;
-            this.longitude = startLongitude;
 
             const tripRoute = new Route(
                 [ this.longitude, this.latitude  ],

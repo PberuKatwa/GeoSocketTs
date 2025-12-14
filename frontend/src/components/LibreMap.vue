@@ -25,6 +25,7 @@ const targetCordinates = ref<mapCoordinates>([36.812416481445524, -1.27531960775
 const centerCordinates = ref<mapCoordinates>([36.82374613232531, -1.2991745172969615]);
 const mapContainer = ref<HTMLElement | null>(null);
 const isRouteLoaded = ref<boolean>(false)
+const hasRouteChanged = ref<boolean>(false)
 
 const { 
   initializeMap, 
@@ -40,7 +41,8 @@ async function addCenter() {
   try {
     const coords = await chooseCoordinates();
     if (!coords || coords === undefined) throw new Error(`No coords were found`);
-    isRouteLoaded.value = false    
+    isRouteLoaded.value = false 
+    hasRouteChanged.value = true   
     centerCordinates.value = coords;
     setCenterMarker(coords);
     
@@ -56,7 +58,8 @@ async function addTarget() {
   try {
     const coords = await chooseCoordinates();
     if (!coords || coords === undefined) throw new Error(`No coords were found`);
-    isRouteLoaded.value = false    
+    isRouteLoaded.value = false
+    hasRouteChanged.value = true    
     targetCordinates.value = coords;
     setTargetMarker(coords);
     
@@ -101,7 +104,8 @@ async function startSimulation() {
       targetCordinates.value[1],
       targetCordinates.value[0],
       centerCordinates.value[1],
-      centerCordinates.value[0]
+      centerCordinates.value[0],
+      hasRouteChanged.value
     );
     
     console.log("Driver simulation started", socketStore.driverCordinates);
