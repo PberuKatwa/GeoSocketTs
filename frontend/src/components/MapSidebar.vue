@@ -88,14 +88,12 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import type { PropType } from 'vue';
 
-// Define the structure for an action item
 export interface MapSide {
   label: string;
   handler: () => void | Promise<void>;
   icon?: string;
 }
 
-// Define the props
 defineProps({
   actions: {
     type: Array as PropType<MapSide[]>,
@@ -103,13 +101,11 @@ defineProps({
   }
 });
 
-// Define emits for clearing active state
 const emit = defineEmits<{
   markerSet: [type: 'center' | 'target'];
   simulationStopped: [];
 }>();
 
-// Reactive state
 const isOpen = ref(true);
 const isMobile = ref(false);
 const activeAction = ref<string | null>(null);
@@ -120,14 +116,12 @@ const toast = ref({
   type: 'info'
 });
 
-// Expose method to clear active state from parent
 defineExpose({
   clearActiveState: () => {
     activeAction.value = null;
   }
 });
 
-// Check if device is mobile
 const checkMobile = () => {
   isMobile.value = window.innerWidth <= 768;
   if (isMobile.value) {
@@ -135,7 +129,6 @@ const checkMobile = () => {
   }
 };
 
-// Toggle sidebar
 const toggleSidebar = () => {
   isOpen.value = !isOpen.value;
 };
@@ -146,28 +139,21 @@ const closeSidebar = () => {
   }
 };
 
-// Handle action click
 const handleAction = async (action: MapSide) => {
   const persistentActions = ['Add Center', 'Add Target', 'Start Simulation'];
   
-  // Set active state for persistent actions
   if (persistentActions.includes(action.label)) {
     activeAction.value = action.label;
   } else if (action.label === 'Stop Simulation') {
-    // Clear active state when stopping simulation
     activeAction.value = null;
   }
 
-  // Show toast notification
   showToast(action.label);
 
-  // Call the action handler
   try {
     await action.handler();
     
-    // Auto-clear active state after marker is set
     if (action.label === 'Add Center' || action.label === 'Add Target') {
-      // Give user time to click on map, then clear after successful action
       setTimeout(() => {
         if (activeAction.value === action.label) {
           activeAction.value = null;
@@ -180,13 +166,11 @@ const handleAction = async (action: MapSide) => {
     activeAction.value = null;
   }
 
-  // Close sidebar on mobile after action
   if (isMobile.value && action.label !== 'Add Center' && action.label !== 'Add Target') {
     setTimeout(() => closeSidebar(), 300);
   }
 };
 
-// Show success toast after marker is set
 const showSuccessToast = (actionLabel: string) => {
   const successMessages: Record<string, { title: string; message: string }> = {
     'Add Center': {
@@ -210,7 +194,6 @@ const showSuccessToast = (actionLabel: string) => {
   }
 };
 
-// Show toast notification
 const showToast = (actionLabel: string) => {
   const toastMessages: Record<string, { title: string; message: string; type: string }> = {
     'Add Center': {
@@ -252,12 +235,10 @@ const showToast = (actionLabel: string) => {
   };
 };
 
-// Close toast
 const closeToast = () => {
   toast.value.show = false;
 };
 
-// Get toast icon based on type
 const getToastIcon = () => {
   const icons: Record<string, string> = {
     info: 'fas fa-info-circle',
@@ -268,7 +249,6 @@ const getToastIcon = () => {
   return icons[toast.value.type] || icons.info;
 };
 
-// Lifecycle hooks
 onMounted(() => {
   checkMobile();
   window.addEventListener('resize', checkMobile);
@@ -280,7 +260,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* Toggle Button */
 .sidebar-toggle {
   position: fixed;
   top: 20px;
