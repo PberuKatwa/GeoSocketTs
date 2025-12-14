@@ -58,10 +58,10 @@ class DriverConfig{
             if(!targetLongitude) throw new Error(`No target longitude was provided`);
             if(!osrmUrl) throw new Error(`No osm url was provided.`);
           
-            // if(routeChanged){
+            if(routeChanged){
                 this.latitude = startLatitude;
                 this.longitude = startLongitude;
-            // }
+            }
             
 
             const tripRoute = new Route(

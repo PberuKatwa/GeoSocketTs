@@ -107,6 +107,8 @@ async function startSimulation() {
       centerCordinates.value[0],
       hasRouteChanged.value
     );
+
+    hasRouteChanged.value = false;
     
     console.log("Driver simulation started", socketStore.driverCordinates);
   } catch (error) {
