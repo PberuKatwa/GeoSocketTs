@@ -59,6 +59,14 @@ export function useMap() {
     
   }
 
+  function fitMapToCoordinates(){
+    try{
+      map.value?.fitBoundsToAllMarkers()
+    }catch(error){
+      console.error(`Error in fitting map to coordinates`, error)
+    }
+  }
+
   return {
     map,
     initializeMap,
@@ -66,6 +74,7 @@ export function useMap() {
     setTargetMarker,
     drawPath,
     chooseCoordinates,
-    updateDriver
+    updateDriver,
+    fitMapToCoordinates
   };
 }

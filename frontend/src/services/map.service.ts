@@ -111,6 +111,81 @@ class MapService{
 
     }
 
+    public fitBoundsToAllMarkers(options?: {
+        padding?: number | { top: number; bottom: number; left: number; right: number };
+        maxZoom?: number;
+        duration?: number;
+    }): void {
+        try {
+            if (!this.map) return;
+
+            const coordinates: mapCoordinates[] = [];
+
+            if (this.centerMarker) {
+                const lngLat = this.centerMarker.getLngLat();
+                coordinates.push([lngLat.lng, lngLat.lat]);
+            }
+
+            if (this.targetMarker) {
+                const lngLat = this.targetMarker.getLngLat();
+                coordinates.push([lngLat.lng, lngLat.lat]);
+            }
+
+            if (this.driverMarker) {
+                const lngLat = this.driverMarker.getLngLat();
+                coordinates.push([lngLat.lng, lngLat.lat]);
+            }
+
+            if (this.waypointMarkers && this.waypointMarkers.length > 0) {
+                this.waypointMarkers.forEach(marker => {
+                    const lngLat = marker.getLngLat();
+                    coordinates.push([lngLat.lng, lngLat.lat]);
+                });
+            }
+
+            if (coordinates.length === 0) return;
+
+            if (coordinates.length === 1) {
+
+                if (coordinates[0] === undefined) throw new Error(`No coordinates were provided`);
+
+                this.map.flyTo({
+                    center: [coordinates[0][0], coordinates[0][1]],
+                    zoom: 14,
+                    duration: options?.duration ?? 1000
+                });
+                return;
+            }
+
+            const bounds = new LngLatBounds();
+            coordinates.forEach(coord => {
+                bounds.extend([coord[0], coord[1]]);
+            });
+
+            const defaultPadding = {
+                top: 100,
+                bottom: 100,
+                left: 380,
+                right: 100
+            };
+
+            const padding = options?.padding !== undefined
+                ? typeof options.padding === 'number'
+                    ? { top: options.padding, bottom: options.padding, left: options.padding, right: options.padding }
+                    : options.padding
+                : defaultPadding;
+
+            this.map.fitBounds(bounds, {
+                padding,
+                maxZoom: options?.maxZoom ?? 15,
+                duration: options?.duration ?? 1000
+            });
+
+        } catch (error) {
+            console.error('Error fitting bounds to markers:', error);
+        }
+    }
+
     public setDriverMarker(coords: mapCoordinates): Marker {
         try {
 

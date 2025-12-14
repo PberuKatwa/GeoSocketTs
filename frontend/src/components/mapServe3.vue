@@ -29,7 +29,8 @@ const {
   chooseCoordinates, 
   setTargetMarker, 
   drawPath, 
-  updateDriver 
+  updateDriver,
+  fitMapToCoordinates
 } = useMap();
 
 async function addCenter() {
@@ -173,6 +174,8 @@ onMounted(() => {
 
   setCenterMarker(centerCordinates.value);
   setTargetMarker(targetCordinates.value);
+  fitMapToCoordinates()
+  
 });
 </script>
 
