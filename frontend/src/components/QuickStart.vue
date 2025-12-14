@@ -325,6 +325,7 @@
               </div>
             </div>
           </div>
+          
         </div>
       </div>
     </div>
@@ -334,13 +335,13 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-const activeSection = ref('overview');
+const activeSection = ref('workflow');
 
 const sections = [
+  { id: 'workflow', label: 'Getting Started', icon: 'fas fa-rocket' },
   { id: 'overview', label: 'Overview', icon: 'fas fa-eye' },
   { id: 'markers', label: 'Markers Guide', icon: 'fas fa-map-pin' },
   { id: 'sidebar', label: 'Sidebar Controls', icon: 'fas fa-sliders-h' },
-  { id: 'workflow', label: 'Getting Started', icon: 'fas fa-rocket' }
 ];
 </script>
 
