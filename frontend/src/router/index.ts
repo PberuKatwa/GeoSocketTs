@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import map from '@/views/map.vue'
-import mapServe3 from '@/components/mapServe3.vue'
 import LibreMap from '@/components/LibreMap.vue'
 
 const routes:Array<RouteRecordRaw> =[
@@ -10,11 +9,6 @@ const routes:Array<RouteRecordRaw> =[
     path:'/map-test',
     name:'map-test',
     component:map
-  },
-  {
-    path:'/map2/:id',
-    name:'map-driver-id2',
-    component:mapServe3
   },
   {
     path:'/libre-map/:id',

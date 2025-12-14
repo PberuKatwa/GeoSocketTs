@@ -93,10 +93,11 @@ async function startSimulation() {
   try {
     if (!centerCordinates.value) return;
     if (!targetCordinates.value) return;
-    if (!driverId) return;
+    let useId = driverId ? driverId : "001"
+    // if (!driverId) driverId = "";
     
     socketStore.startSimulation(
-      driverId,
+      useId,
       targetCordinates.value[1],
       targetCordinates.value[0],
       centerCordinates.value[1],
