@@ -13,4 +13,8 @@
 </script>
 
 
-<style scoped></style>
+<style scoped>
+  *{
+    font-family: "Poppins";
+  }
+</style>
