@@ -60,7 +60,7 @@ class SocketService{
         this.drivers.set(driverId, driver);
       }
 
-      await driver.startSimulation( targetLat, targetLng, "http://localhost:5000" );
+      await driver.startSimulation( startLat,startLng,targetLat, targetLng, "http://localhost:5000" );
 
       const emitInterval = setInterval(() => {
 

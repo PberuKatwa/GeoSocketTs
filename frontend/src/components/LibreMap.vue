@@ -40,7 +40,7 @@ async function addCenter() {
   try {
     const coords = await chooseCoordinates();
     if (!coords || coords === undefined) throw new Error(`No coords were found`);
-    
+    isRouteLoaded.value = false    
     centerCordinates.value = coords;
     setCenterMarker(coords);
     
@@ -56,7 +56,7 @@ async function addTarget() {
   try {
     const coords = await chooseCoordinates();
     if (!coords || coords === undefined) throw new Error(`No coords were found`);
-    
+    isRouteLoaded.value = false    
     targetCordinates.value = coords;
     setTargetMarker(coords);
     
