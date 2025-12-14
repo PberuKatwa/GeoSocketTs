@@ -112,6 +112,43 @@ class MapService{
 
     }
 
+private getResponsivePadding(): { top: number; bottom: number; left: number; right: number } {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        
+        // Mobile (portrait)
+        if (width <= 480) {
+            return {
+                top: 80,
+                bottom: 80,
+                left: 20,
+                right: 20
+            };
+        }
+        
+        // Mobile (landscape) and tablets
+        if (width <= 768) {
+            return {
+                top: 60,
+                bottom: 60,
+                left: 40,
+                right: 40
+            };
+        }
+        
+        // Desktop - account for sidebar
+        return {
+            top: 100,
+            bottom: 100,
+            left: 320, // Sidebar width + some margin
+            right: 100
+        };
+    }
+
+    /**
+     * Fit map bounds to show all active markers (center, target, driver, waypoints)
+     * @param options - Custom padding and animation options
+     */
     public fitBoundsToAllMarkers(options?: {
         padding?: number | { top: number; bottom: number; left: number; right: number };
         maxZoom?: number;
@@ -122,6 +159,7 @@ class MapService{
 
             const coordinates: mapCoordinates[] = [];
 
+            // Collect all marker coordinates
             if (this.centerMarker) {
                 const lngLat = this.centerMarker.getLngLat();
                 coordinates.push([lngLat.lng, lngLat.lat]);
@@ -137,6 +175,7 @@ class MapService{
                 coordinates.push([lngLat.lng, lngLat.lat]);
             }
 
+            // Add waypoint markers
             if (this.waypointMarkers && this.waypointMarkers.length > 0) {
                 this.waypointMarkers.forEach(marker => {
                     const lngLat = marker.getLngLat();
@@ -144,10 +183,11 @@ class MapService{
                 });
             }
 
+            // If we have no markers, do nothing
             if (coordinates.length === 0) return;
 
+            // If only one marker, just center on it
             if (coordinates.length === 1) {
-
                 if (coordinates[0] === undefined) throw new Error(`No coordinates were provided`);
 
                 this.map.flyTo({
@@ -158,24 +198,52 @@ class MapService{
                 return;
             }
 
+            // Create bounds from all coordinates
             const bounds = new LngLatBounds();
             coordinates.forEach(coord => {
                 bounds.extend([coord[0], coord[1]]);
             });
 
-            const defaultPadding = {
-                top: 100,
-                bottom: 100,
-                left: 380,
-                right: 100
-            };
+            // Get responsive padding or use custom
+            let padding: { top: number; bottom: number; left: number; right: number };
+            
+            if (options?.padding !== undefined) {
+                // Use custom padding if provided
+                padding = typeof options.padding === 'number'
+                    ? { 
+                        top: options.padding, 
+                        bottom: options.padding, 
+                        left: options.padding, 
+                        right: options.padding 
+                    }
+                    : options.padding;
+            } else {
+                // Use responsive padding
+                padding = this.getResponsivePadding();
+            }
 
-            const padding = options?.padding !== undefined
-                ? typeof options.padding === 'number'
-                    ? { top: options.padding, bottom: options.padding, left: options.padding, right: options.padding }
-                    : options.padding
-                : defaultPadding;
+            // Safety check: ensure padding doesn't exceed map container size
+            const container = this.map.getContainer();
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
 
+            // Reduce padding if it's too large for the container
+            const totalHorizontalPadding = padding.left + padding.right;
+            const totalVerticalPadding = padding.top + padding.bottom;
+
+            if (totalHorizontalPadding >= containerWidth * 0.9) {
+                const scale = (containerWidth * 0.7) / totalHorizontalPadding;
+                padding.left = Math.floor(padding.left * scale);
+                padding.right = Math.floor(padding.right * scale);
+            }
+
+            if (totalVerticalPadding >= containerHeight * 0.9) {
+                const scale = (containerHeight * 0.7) / totalVerticalPadding;
+                padding.top = Math.floor(padding.top * scale);
+                padding.bottom = Math.floor(padding.bottom * scale);
+            }
+
+            // Fit bounds with safe padding
             this.map.fitBounds(bounds, {
                 padding,
                 maxZoom: options?.maxZoom ?? 15,
