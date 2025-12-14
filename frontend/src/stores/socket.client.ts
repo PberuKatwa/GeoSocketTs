@@ -67,7 +67,6 @@ export const useSocketClientStore = defineStore( "socketClient", function(){
         try{
             const{ isTracking:tracking, hasJourneyStarted:started } = socketService.startSimulation(driverId, targetLat, targetLng, startLat, startLng, hasRouteChanged)
 
-            console.log("hass route changed store", hasRouteChanged)
             isTracking.value = tracking;
             hasJourneyStarted.value = started;
 

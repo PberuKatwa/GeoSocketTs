@@ -125,8 +125,7 @@ class SocketService{
 
     {
         try{
-            console.log("socketttt route store", hasRouteChanged)
-
+            
             this.socket.emit( 'start-tracking', { driverId, targetLat, targetLng , startLat, startLng, hasRouteChanged })
             this.isTracking = true;
             this.hasJourneyStarted = true;   
