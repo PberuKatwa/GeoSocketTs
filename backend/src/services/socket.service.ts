@@ -2,6 +2,7 @@ import socketServer from "../socket/index.js";
 import Route from "../routeConfig/route.config.js";
 import DriverConfig from "../routeConfig/driver.config.js";
 import logger from "../utils/logger.js";
+import { config } from "../config.js";
 
 class SocketService{
 
@@ -19,7 +20,7 @@ class SocketService{
         const tripRoute = new Route( 
           [from.lng, from.lat],
           [to.lng, to.lat] ,
-          "http://localhost:5000"
+          config.OSRM_URL
         )
 
         const result = await tripRoute.computeRoute()
@@ -59,7 +60,7 @@ class SocketService{
         this.drivers.set(driverId, driver);
       }
 
-      await driver.startSimulation( startLat,startLng,targetLat, targetLng, "http://localhost:5000", hasRouteChanged);
+      await driver.startSimulation( startLat,startLng,targetLat, targetLng, config.OSRM_URL, hasRouteChanged);
 
       const emitInterval = setInterval(() => {
 
