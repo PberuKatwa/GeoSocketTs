@@ -38,43 +38,148 @@ cd GeoSocketTs
 
 ### Prerequisites
 
-- **Node.js** (v20.19.0+ or v22.12.0+)
-- **Docker** (for OSRM server)
+- **Docker & Docker Compose** (for containerized setup - recommended)
+- **Node.js** (v20.19.0+ or v22.12.0+ for local development)
 - **Git** (for cloning)
 
-### 1. Start OSRM Server (Required)
+### Quick Reference
 
-The OSRM server provides real-world routing calculations. We've included a pre-configured Dockerfile for Kenya.
+| Method | Command | Time | Best For |
+|--------|---------|------|----------|
+| **Docker Compose** | `docker-compose up --build` | 5-10 min | Production, easy setup |
+| **Local Dev** | `npm run dev` (each service) | 2-3 min | Development, debugging |
 
-#### Option A: Using Docker (Recommended)
+---
+
+## Quick Start with Docker Compose (Recommended)
+
+The easiest way to get everything running with a single command.
+
+### 1. Prepare OSRM Data
+
+First, download the Kenya OpenStreetMap data:
 
 ```bash
-# Build the OSRM image for Kenya
+# Create the data directory
+mkdir -p osrm-kenya/data
+
+# Download Kenya's map data (~500MB)
+wget -O osrm-kenya/data/kenya-latest.osm.pbf https://download.geofabrik.de/africa/kenya-latest.osm.pbf
+```
+
+**Note:** This is a one-time setup. The file will be used by Docker to build the OSRM routing engine.
+
+### 2. Configure Environment Variables
+
+Copy the example environment file:
+
+```bash
+cp .env.example .env
+```
+
+The `.env` file contains:
+```env
+OSRM_URL=http://geosocket-osrm:5000    # OSRM service URL (internal Docker network)
+PORT=4000                               # Backend port
+FRONTEND_PORT=8158                      # Frontend port
+BACKEND_PORT=4000                       # Backend port mapping
+```
+
+### 3. Start All Services
+
+```bash
+# Build and start all services
+docker-compose up --build
+
+# Or run in background
+docker-compose up -d --build
+```
+
+This will:
+- Build and start OSRM server (port 5000)
+- Build and start backend (port 4000)
+- Build and start frontend (port 8158)
+- Create a shared Docker network for inter-service communication
+
+### 4. Access the Application
+
+Open your browser and navigate to:
+
+```
+http://localhost:8158
+```
+
+### Verify Services
+
+```bash
+# Check all running containers
+docker-compose ps
+
+# View logs
+docker-compose logs -f
+
+# View specific service logs
+docker-compose logs -f backend
+docker-compose logs -f geosocket-osrm
+docker-compose logs -f geosocket-frontend
+```
+
+### Stop Services
+
+```bash
+# Stop all services
+docker-compose down
+
+# Stop and remove volumes
+docker-compose down -v
+```
+
+---
+
+## Local Development Setup (Without Docker)
+
+For development without Docker, follow these steps:
+
+### 1. Start OSRM Server
+
+#### Option A: Using Docker (Recommended for OSRM only)
+
+```bash
+# Build the OSRM image
 docker build -t osrm-kenya ./osrm-kenya
 
 # Run the OSRM server
 docker run -t -i -p 5000:5000 osrm-kenya
 ```
 
-The server will:
-- Download Kenya's OpenStreetMap data
-- Extract and process the routing graph
-- Start the OSRM server on port 5000
-
 #### Option B: Using Pre-built OSRM Image
 
 ```bash
-# For Kenya (or replace with your region)
-docker run -t -i -p 5000:5000 -v "${PWD}/osrm-data:/data" osrm/osrm-backend osrm-routed --algorithm mld /data/kenya.osrm
-```
+# Ensure data is downloaded first
+mkdir -p osrm-kenya/data
+wget -O osrm-kenya/data/kenya-latest.osm.pbf https://download.geofabrik.de/africa/kenya-latest.osm.pbf
 
-**Note:** First run will download and process the map data (~500MB for Kenya).
+# Run OSRM
+docker run -t -i -p 5000:5000 -v "${PWD}/osrm-kenya/data:/data" osrm/osrm-backend osrm-routed --algorithm mld /data/kenya.osrm
+```
 
 ### 2. Start Backend (Node.js)
 
+In a new terminal:
+
 ```bash
 cd backend
+
+# Install dependencies
 npm install
+
+# Create .env file
+cp ../.env.example .env
+
+# Update .env for local development
+# Change: OSRM_URL=http://localhost:5000
+
+# Start development server
 npm run dev
 ```
 
@@ -85,9 +190,15 @@ The backend will:
 
 ### 3. Start Frontend (Vue 3)
 
+In another new terminal:
+
 ```bash
 cd frontend
+
+# Install dependencies
 npm install
+
+# Start development server
 npm run dev
 ```
 
@@ -105,8 +216,249 @@ curl http://localhost:5000/status
 # Check backend
 curl http://localhost:4000
 
-# Open frontend
+# Open frontend in browser
 open http://localhost:5173
+```
+
+---
+
+## Environment Configuration
+
+### Docker Compose (.env.example)
+
+```env
+# OSRM Service (internal Docker network)
+OSRM_URL=http://geosocket-osrm:5000
+
+# Backend Configuration
+PORT=4000
+BACKEND_PORT=4000
+
+# Frontend Configuration
+FRONTEND_PORT=8158
+```
+
+### Local Development (backend/.env)
+
+```env
+# OSRM Service (local machine)
+OSRM_URL=http://localhost:5000
+
+# Backend Configuration
+PORT=4000
+```
+
+---
+
+## Docker Compose Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Docker Network (geonet)              │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  ┌──────────────────┐  ┌──────────────────┐            │
+│  │  geosocket-osrm  │  │ geosocket-backend│            │
+│  │  (Port 5000)     │  │ (Port 4000)      │            │
+│  │  OSRM Routing    │  │ Socket.IO Server │            │
+│  └──────────────────┘  └──────────────────┘            │
+│         ▲                      ▲                        │
+│         │                      │                        │
+│         └──────────────────────┘                        │
+│                                                         │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │      geosocket-frontend (Port 8158)              │  │
+│  │      Vue 3 + Vite (Nginx)                        │  │
+│  └──────────────────────────────────────────────────┘  │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+         │                    │                    │
+         ▼                    ▼                    ▼
+    localhost:5000    localhost:4000        localhost:8158
+```
+
+---
+
+## Docker Setup Details
+
+### Multi-Stage Builds
+
+All Dockerfiles use multi-stage builds to minimize image size:
+
+#### Backend (Node.js)
+```dockerfile
+# Stage 1: Build - Compiles TypeScript to JavaScript
+FROM node:20-alpine AS build
+# ... install deps, compile
+
+# Stage 2: Runtime - Only includes compiled code and production deps
+FROM node:20-alpine
+# ... copy dist and node_modules
+```
+
+**Benefits:**
+- Smaller final image (~200MB vs 500MB+)
+- Faster deployment
+- No build tools in production
+
+#### Frontend (Vue 3)
+```dockerfile
+# Stage 1: Build - Compiles Vue with Vite
+FROM node:20-alpine AS build
+# ... npm run build
+
+# Stage 2: Runtime - Nginx serves static files
+FROM nginx:alpine
+# ... copy dist to nginx
+```
+
+**Benefits:**
+- Optimized static file serving
+- Minimal runtime footprint (~50MB)
+- Production-ready web server
+
+#### OSRM
+```dockerfile
+# Stage 1: Build - Processes OpenStreetMap data
+FROM osrm/osrm-backend:latest AS builder
+# ... osrm-extract, osrm-partition, osrm-customize
+
+# Stage 2: Runtime - Runs OSRM server
+FROM osrm/osrm-backend:latest
+# ... copy processed data
+```
+
+**Benefits:**
+- Data processing happens once during build
+- Runtime container only contains routing engine
+- Faster startup times
+
+### Environment Variables
+
+#### Docker Compose (.env.example)
+
+```env
+# OSRM Service URL (uses Docker service name)
+OSRM_URL=http://geosocket-osrm:5000
+
+# Backend Configuration
+PORT=4000
+BACKEND_PORT=4000
+
+# Frontend Configuration
+FRONTEND_PORT=8158
+```
+
+**Note:** Service names (`geosocket-osrm`, `geosocket-backend`) are resolved via Docker's internal DNS.
+
+#### Local Development (backend/.env)
+
+```env
+# OSRM Service URL (localhost for local development)
+OSRM_URL=http://localhost:5000
+
+# Backend Configuration
+PORT=4000
+```
+
+### Docker Network
+
+Docker Compose creates a bridge network (`geonet`) that allows services to communicate:
+
+```yaml
+networks:
+  geonet:
+    name: geonet
+    driver: bridge
+```
+
+**Service Communication:**
+- Frontend → Backend: `http://geosocket-backend:4000`
+- Backend → OSRM: `http://geosocket-osrm:5000`
+- External → Frontend: `http://localhost:8158`
+
+### Volume Management
+
+```bash
+# View volumes
+docker volume ls
+
+# Remove unused volumes
+docker volume prune
+
+# Remove all volumes (careful!)
+docker-compose down -v
+```
+
+### Image Management
+
+```bash
+# View images
+docker images
+
+# Remove unused images
+docker image prune
+
+# Remove specific image
+docker rmi geosocket-backend
+
+# Rebuild without cache
+docker-compose build --no-cache
+```
+
+---
+
+## Troubleshooting Docker Setup
+
+### OSRM Data Download Issues
+
+```bash
+# If wget fails, try curl
+curl -o osrm-kenya/data/kenya-latest.osm.pbf https://download.geofabrik.de/africa/kenya-latest.osm.pbf
+
+# Verify file exists and has content
+ls -lh osrm-kenya/data/kenya-latest.osm.pbf
+```
+
+### Docker Build Failures
+
+```bash
+# Clean up and rebuild
+docker-compose down -v
+docker system prune -a
+docker-compose up --build
+```
+
+### Port Already in Use
+
+```bash
+# Change ports in docker-compose.yaml or .env
+# Example: Change frontend port from 8158 to 8159
+FRONTEND_PORT=8159
+
+# Or find and kill process using the port
+lsof -i :8158
+kill -9 <PID>
+```
+
+### Services Not Communicating
+
+```bash
+# Check network connectivity
+docker-compose exec backend ping geosocket-osrm
+
+# View network details
+docker network inspect geonet
+```
+
+### OSRM Processing Takes Too Long
+
+```bash
+# OSRM data processing can take 5-10 minutes on first build
+# Monitor progress with:
+docker-compose logs -f geosocket-osrm
+
+# Be patient - this is normal for first-time setup
 ```
 
 ## Quick Start
@@ -226,10 +578,12 @@ GeoSocketTs/
 │   │   │   └── geo.types.ts    # Geospatial interfaces
 │   │   ├── App.vue             # Main application component
 │   │   └── main.ts             # Application entry point
+│   ├── Dockerfile              # Frontend container image
 │   └── package.json
 │
 ├── backend/                    # Node.js backend
 │   ├── src/
+│   │   ├── config.ts           # Environment configuration
 │   │   ├── routeConfig/        # Route and driver management
 │   │   │   ├── driver.config.ts # Driver simulation logic
 │   │   │   └── route.config.ts  # OSRM route calculation
@@ -241,13 +595,30 @@ GeoSocketTs/
 │   │   ├── utils/              # Utility functions
 │   │   │   └── logger.ts       # Winston logging
 │   │   └── server.ts           # Application entry point
+│   ├── Dockerfile              # Backend container image
+│   ├── .env                    # Local environment variables
+│   ├── .env.docker             # Docker environment variables
 │   └── package.json
 │
-├── osrm-kenya/                 # OSRM data (optional)
+├── osrm-kenya/                 # OSRM routing engine
+│   ├── data/
+│   │   └── kenya-latest.osm.pbf # OpenStreetMap data (download required)
 │   └── Dockerfile              # OSRM server configuration
 │
-└── README.md
+├── docker-compose.yaml         # Multi-container orchestration
+├── .env.example                # Example environment variables
+├── .gitignore                  # Git ignore rules
+└── README.md                   # Project documentation
 ```
+
+### Key Files
+
+- **docker-compose.yaml** - Orchestrates all three services (OSRM, backend, frontend)
+- **.env.example** - Template for environment variables (copy to .env)
+- **backend/Dockerfile** - Multi-stage build for Node.js backend
+- **frontend/Dockerfile** - Multi-stage build with Nginx for Vue 3 app
+- **osrm-kenya/Dockerfile** - Multi-stage build for OSRM routing engine
+- **backend/src/config.ts** - Loads and validates environment variables
 
 ## Tech Stack
 
@@ -675,6 +1046,87 @@ curl http://localhost:4000
 - Ensure coordinates are valid [lng, lat] format
 - Check map zoom level (should be 12-15)
 - Verify map is initialized before setting markers
+
+## Common Commands
+
+### Docker Compose
+
+```bash
+# Start all services
+docker-compose up --build
+
+# Start in background
+docker-compose up -d --build
+
+# View logs
+docker-compose logs -f
+
+# View specific service logs
+docker-compose logs -f backend
+docker-compose logs -f geosocket-osrm
+docker-compose logs -f geosocket-frontend
+
+# Stop all services
+docker-compose down
+
+# Stop and remove volumes
+docker-compose down -v
+
+# Rebuild specific service
+docker-compose build --no-cache backend
+
+# Execute command in container
+docker-compose exec backend npm run build
+
+# View running containers
+docker-compose ps
+```
+
+### Local Development
+
+```bash
+# Backend
+cd backend
+npm install
+npm run dev
+
+# Frontend (new terminal)
+cd frontend
+npm install
+npm run dev
+
+# Build backend
+cd backend
+npm run build
+
+# Build frontend
+cd frontend
+npm run build
+```
+
+### Docker Management
+
+```bash
+# View all images
+docker images
+
+# View all containers
+docker ps -a
+
+# View all volumes
+docker volume ls
+
+# Remove unused resources
+docker system prune
+
+# View network details
+docker network inspect geonet
+
+# Check service connectivity
+docker-compose exec backend ping geosocket-osrm
+```
+
+---
 
 ## Performance Tips
 
