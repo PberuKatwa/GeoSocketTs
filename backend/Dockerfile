@@ -1,8 +1,3 @@
-# ================================
-# Backend Dockerfile
-# Node.js + TypeScript + Socket.IO
-# ================================
-
 # ---- Build stage ----
 FROM node:20-alpine AS build
 
