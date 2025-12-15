@@ -1,0 +1,45 @@
+version: "3.9"
+
+services:
+  geosocket-osrm:
+    build:
+      context: ./osrm-kenya
+      dockerfile: Dockerfile
+    container_name: geosocket-osrm
+    ports:
+      - "5000:5000"
+    networks:
+      - geonet
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: geosocket-backend
+    env_file:
+      - ./.env.example
+    ports:
+      - "${BACKEND_PORT:-4000}:4000"
+    depends_on:
+      - geosocket-osrm
+    networks:
+      - geonet
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: geosocket-frontend
+    env_file:
+      - ./.env.example
+    ports:
+      - "${FRONTEND_PORT:-8158}:8158"
+    depends_on:
+      - backend
+    networks:
+      - geonet
+
+networks:
+  geonet:
+    name: geonet
+    driver: bridge

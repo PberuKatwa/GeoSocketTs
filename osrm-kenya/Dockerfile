@@ -3,13 +3,11 @@ FROM osrm/osrm-backend:latest AS builder
 
 WORKDIR /data
 
-# Download Kenya map (Geofabrik)
-ADD https://download.geofabrik.de/africa/kenya-latest.osm.pbf /data/kenya.osm.pbf
+# Copy local PBF into the image
+COPY ./data/kenya-latest.osm.pbf /data/kenya.osm.pbf
 
-# Extract
+# Extract, partition, and customize
 RUN osrm-extract -p /opt/car.lua /data/kenya.osm.pbf
-
-# Partition & Customize (MLD)
 RUN osrm-partition /data/kenya.osrm
 RUN osrm-customize /data/kenya.osrm
 
@@ -22,7 +20,7 @@ WORKDIR /data
 COPY --from=builder /data /data
 
 # Expose OSRM default port
-EXPOSE 5150
+EXPOSE 5000
 
-# Run OSRM server instantly
+# Run OSRM server
 CMD ["osrm-routed", "--algorithm", "mld", "/data/kenya.osrm"]
