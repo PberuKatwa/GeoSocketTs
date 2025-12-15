@@ -14,5 +14,6 @@ function getEnv(key:string): string {
 }
 
 export const config = {
+    PORT:getEnv("PORT"),
     OSRM_URL:getEnv("OSRM_URL"),
 }
