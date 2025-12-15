@@ -11,7 +11,7 @@ export default defineConfig({
     // vueDevTools(),
   ],
     server: {
-    port: 8150, 
+    port: 8158, 
     strictPort: true, 
     // open: true, 
   },
